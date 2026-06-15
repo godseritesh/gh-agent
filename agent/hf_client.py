@@ -6,9 +6,9 @@ from typing import Any
 import httpx
 
 FREE_MODELS = [
-    "meta-llama/Llama-3.2-3B-Instruct",
-    "microsoft/Phi-3.5-mini-instruct",
     "Qwen/Qwen2.5-7B-Instruct",
+    "google/gemma-2-2b-it",
+    "HuggingFaceTB/SmolLM2-1.7B-Instruct",
 ]
 
 RATE_LIMIT_REMAINING_HEADER = "x-ratelimit-remaining"
@@ -33,7 +33,7 @@ class HFClient:
         self,
         token: str | None = None,
         *,
-        base_url: str = "https://router.huggingface.co/v1/chat/completions",
+        base_url: str = "https://api-inference.huggingface.co/v1/chat/completions",
         timeout: float = DEFAULT_TIMEOUT,
     ) -> None:
         self.base_url = base_url.rstrip("/")
