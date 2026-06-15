@@ -10,6 +10,7 @@ env:
 jobs:
   scan:
     runs-on: ubuntu-latest
+    environment: prod
     steps:
       - name: Checkout agent repo
         uses: actions/checkout@v4
