@@ -27,7 +27,7 @@ def _get_token() -> str | None:
 
 
 def _inject_token_into_remote(repo_dir: str) -> None:
-    """Inject GITHUB_TOKEN into the remote URL so git push can authenticate."""
+    """Inject GH_TOKEN into the remote URL so git push can authenticate."""
     token = _get_token()
     if not token:
         return
@@ -38,10 +38,12 @@ def _inject_token_into_remote(repo_dir: str) -> None:
     if result.returncode != 0:
         return
     url = result.stdout.strip()
-    if "://" not in url or "@" in url:
-        return  # already authenticated or SSH
-    # Inject token: https://github.com/org/repo -> https://x-access-token:TOKEN@github.com/org/repo
-    updated = url.replace("://", f"://x-access-token:{token}@")
+    if "://" not in url:
+        return  # SSH, skip
+    # Always rewrite the remote URL with the PAT, even if already authed
+    _, _, rest = url.partition("://")
+    host_path = rest.split("@", 1)[-1]  # strip any existing token
+    updated = f"https://x-access-token:{token}@{host_path}"
     subprocess.run(
         ["git", "remote", "set-url", "origin", updated],
         cwd=repo_dir, capture_output=True,
