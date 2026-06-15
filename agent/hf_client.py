@@ -35,7 +35,7 @@ class HFClient:
         self,
         token: str | None = None,
         *,
-        base_url: str = "https://api-inference.huggingface.co/models",
+        base_url: str = "https://router.huggingface.co/hf-inference/models",
         timeout: float = DEFAULT_TIMEOUT,
     ) -> None:
         self.base_url = base_url.rstrip("/")
