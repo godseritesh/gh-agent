@@ -69,3 +69,29 @@ def test_token_budget_resets_daily():
     assert state.can_use_tokens(5000) is True
     state.record_tokens(5000)
     assert state.token_budget["tokens_used"] == 5000
+
+
+def test_mark_repo_seen():
+    state = AgentState()
+    state.mark_repo_seen("SkyLink")
+    state.mark_repo_seen("nss-platform")
+    state.mark_repo_seen("SkyLink")
+    assert state.repos_seen_today == ["SkyLink", "nss-platform"]
+
+
+def test_record_shipped():
+    state = AgentState()
+    entry = {"title": "Add missing tests", "repo": "SkyLink", "pr_url": "https://pr/1"}
+    state.record_shipped(entry)
+    assert len(state.shipped_today) == 1
+    assert state.shipped_today[0]["title"] == "Add missing tests"
+
+
+def test_new_day_resets_shipped_and_seen():
+    state = AgentState({
+        "shipped_today": [{"title": "old"}],
+        "repos_seen_today": ["SkyLink"],
+        "token_budget": {"date": "2000-01-01", "tokens_used": 0, "daily_limit": 30000},
+    })
+    assert state.shipped_today == []
+    assert state.repos_seen_today == []

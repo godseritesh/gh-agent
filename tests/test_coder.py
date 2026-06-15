@@ -1,16 +1,16 @@
-from agent.coder import apply_patch, generate_fix
+from agent.coder import apply_patch, implement_step
 
 
-def test_generate_fix_prompt_format():
+def test_implement_step_prompt_format():
     class FakeClient:
         def generate(self, prompt, **kwargs):
             assert "def hello(): pass" in prompt
             assert "SkyLink" in prompt
-            assert "bug" in prompt
+            assert "fix" in prompt
             return "def hello():\n    return 'fixed'"
 
     code = "def hello(): pass"
-    result = generate_fix(FakeClient(), "SkyLink", "bug", "src/main.py", code, "python")
+    result = implement_step(FakeClient(), "SkyLink", "fix the bug", "src/main.py", code, "python")
     assert result == "def hello():\n    return 'fixed'"
 
 

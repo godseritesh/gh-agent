@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import os
+import subprocess
 from pathlib import Path
 
-from agent.coder import apply_patch, generate_fix, run_linter, run_tests
+from agent import agents_md
+from agent.coder import apply_patch, implement_step, run_linter, run_tests
 from agent.config import AgentConfig
 from agent.hf_client import HFClient
-from agent.planner import classify_issue, create_plan
+from agent.planner import analyze_repo, create_plan, pick_best_suggestion
 from agent.pr import (
     commit_and_push,
     create_pr_body,
@@ -14,7 +16,7 @@ from agent.pr import (
     create_pull_request,
     enable_auto_merge,
 )
-from agent.scanner import RepoInfo, clone_or_pull, scan_repo
+from agent.scanner import RepoAnalysis, clone_or_pull
 from agent.state import AgentState
 from agent.sync_state import pull_state, push_state
 
@@ -26,103 +28,219 @@ AGENT_REPO = Path(os.environ.get("AGENT_REPO_DIR", "."))
 MAX_ITERATIONS = 3
 
 
+def _get_last_commit(repo_dir: Path) -> str | None:
+    r = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=repo_dir, capture_output=True, text=True,
+    )
+    return r.stdout.strip() if r.returncode == 0 else None
+
+
+def process_repo(
+    client: HFClient,
+    repo_name: str,
+    repo_config: AgentConfig,
+    state: AgentState,
+    agents_context: dict[str, str],
+) -> str | None:
+    print(f"\n=== Researching {repo_name} ===")
+    agents_file = AGENT_REPO / agents_md.filename(repo_name)
+
+    # 1. Check if we have cached context
+    existing_context = agents_context.get(repo_name, "")
+    last_commit = state.get_last_commit(repo_name)
+
+    if existing_context and last_commit:
+        # Quick check: has anything changed?
+        clone_dir = clone_or_pull(ORG, repo_name, WORKSPACE)
+        current_commit = _get_last_commit(clone_dir)
+        if current_commit == last_commit:
+            print(f"  No new commits since last check ({last_commit[:8]}), using cached context")
+            analysis = RepoAnalysis(repo_name, clone_dir)
+            analysis.lint_output = ""
+            if repo_config and repo_config.lint_command:
+                analysis.run_linter(repo_config.lint_command)
+        else:
+            print(f"  New commit {current_commit[:8]} (was {last_commit[:8]}), partial re-scan")
+            analysis = RepoAnalysis(repo_name, clone_dir)
+            analysis.detect_stack()
+            analysis.read_key_files()
+            analysis.detect_ci()
+            if repo_config and repo_config.lint_command:
+                analysis.run_linter(repo_config.lint_command)
+    else:
+        clone_dir = clone_or_pull(ORG, repo_name, WORKSPACE)
+        analysis = RepoAnalysis(repo_name, clone_dir)
+        analysis.detect_stack()
+        analysis.build_file_tree()
+        analysis.read_key_files()
+        analysis.detect_ci()
+        if repo_config and repo_config.lint_command:
+            analysis.run_linter(repo_config.lint_command)
+
+    state.mark_repo_seen(repo_name)
+    print(f"  Stack: {', '.join(analysis.tech_stack) or 'unknown'}")
+    print(f"  Files: {analysis.total_files}, Lines: {analysis.total_lines}")
+    print(f"  Tests: {analysis.test_file_count}")
+
+    # 2. Send to LLM for improvement suggestions
+    context_input = analysis.to_context()
+    if existing_context:
+        context_input = existing_context + "\n\n## Current Analysis\n" + context_input[:4000]
+
+    suggestions = analyze_repo(client, analysis)
+    if not suggestions:
+        print("  No improvement suggestions from LLM")
+        agents_md.save(existing_context or agents_md.generate_initial_context(
+            repo_name, analysis, []), agents_file)
+        return None
+
+    print(f"  Got {len(suggestions)} suggestions:")
+    for s in suggestions:
+        print(f"    [{s.get('impact','?')}] {s.get('title','?')} ({s.get('effort','?')})")
+
+    # 3. Pick best suggestion
+    best = pick_best_suggestion(suggestions, max_effort="medium")
+    if not best:
+        print("  No suggestions fit within effort budget")
+        agents_md.save(existing_context or agents_md.generate_initial_context(
+            repo_name, analysis, suggestions), agents_file)
+        return None
+
+    print(f"\n=== Implementing: {best['title']} ===")
+
+    # 4. Create plan
+    plan = create_plan(client, repo_name, best)
+    if not plan:
+        print("  No plan generated")
+        return None
+
+    # 5. Feature branch
+    ts = int(__import__("time").time())
+    branch = f"agent-{best.get('category','improvement')}-{repo_name.lower()}-{ts}"
+    create_pr_branch(str(clone_dir), branch)
+
+    # 6. Implement each step
+    for subtask in plan[:MAX_ITERATIONS]:
+        files = subtask.get("files", [])
+        for f in files:
+            filepath = clone_dir / f
+            if not filepath.exists():
+                print(f"  File {f} not found, skipping")
+                continue
+
+            code = filepath.read_text(encoding="utf-8")
+            if not state.can_use_tokens(len(code)):
+                print("  Token budget exceeded, stopping")
+                return None
+
+            lang = _detect_language(f)
+            state.start_task(f"{repo_name}:{f}")
+            new_code = implement_step(client, repo_name, subtask["step"], f, code, lang)
+            apply_patch(filepath, new_code)
+            state.record_tokens(len(code) + len(new_code))
+
+            tf = repo_config.test_framework if repo_config else None
+            lc = repo_config.lint_command if repo_config else None
+            test_code, test_out = run_tests(clone_dir, tf)
+            lint_code, lint_out = run_linter(clone_dir, lc)
+
+            if test_code != 0:
+                print(f"  Tests failed: {test_out[:200]}")
+            if lint_code != 0:
+                print(f"  Lint issues: {lint_out[:200]}")
+            state.finish_task()
+
+    # 7. Create PR
+    commit_message = f"agent: {best.get('rationale', best['title'])[:72]}"
+    commit_and_push(str(clone_dir), commit_message)
+
+    pr_body_data = {
+        "problem": best.get("rationale", best["title"]),
+        "change": "\n".join(f"- {s['step']}" for s in plan),
+        "testing": "Tests and linter run; results in run log",
+        "risk": best.get("impact", "medium"),
+    }
+    body = create_pr_body(pr_body_data)
+    pr_url = create_pull_request(
+        str(clone_dir), f"[agent] {best['title']}", body, "master",
+    )
+    if pr_url and repo_config and repo_config.has_tests:
+        enable_auto_merge(str(clone_dir), _extract_pr_number(pr_url))
+
+    state.set_last_commit(repo_name, "HEAD")
+
+    # 8. Update AGENTS.md with shipped entry
+    shipped_entry = {
+        "title": best["title"],
+        "repo": repo_name,
+        "category": best.get("category", "improvement"),
+        "impact": best.get("impact", "medium"),
+        "rationale": best.get("rationale", ""),
+        "pr_url": pr_url or "N/A",
+    }
+    state.record_shipped(shipped_entry)
+
+    if existing_context:
+        new_context = agents_md.append_shipped_entry(existing_context, shipped_entry)
+    else:
+        new_context = agents_md.generate_initial_context(repo_name, analysis, suggestions)
+        new_context = agents_md.append_shipped_entry(new_context, shipped_entry)
+
+    agents_md.save(new_context, agents_file)
+    print("  AGENTS.md updated with shipped entry")
+    return pr_url
+
+
+def _detect_language(filepath: str) -> str:
+    ext = Path(filepath).suffix.lower()
+    return {
+        ".py": "python", ".js": "javascript", ".ts": "typescript",
+        ".tsx": "typescript", ".jsx": "javascript", ".java": "java",
+        ".kt": "kotlin", ".go": "go", ".rs": "rust",
+        ".yaml": "yaml", ".yml": "yaml", ".json": "json",
+        ".md": "markdown", ".html": "html", ".css": "css",
+        ".sql": "sql", ".sh": "bash", ".tf": "hcl",
+    }.get(ext, "text")
+
+
+def _extract_pr_number(pr_url: str) -> int:
+    return int(pr_url.rstrip("/").split("/")[-1])
+
+
 def main() -> None:
-    pull_state(AGENT_REPO, STATE_PATH)
+    pull_state(AGENT_REPO)
     config = AgentConfig.load(CONFIG_PATH)
     state = AgentState.load(STATE_PATH)
+
+    # Load all existing AGENTS.md files
+    agents_context: dict[str, str] = {}
+    for md_file in AGENT_REPO.glob("AGENTS-*.md"):
+        repo_name = md_file.stem.replace("AGENTS-", "", 1)
+        agents_context[repo_name] = md_file.read_text(encoding="utf-8")
+
     hf_token = os.environ.get("HF_TOKEN")
     client = HFClient(hf_token)
 
-    repo_name = os.environ.get("REPO_NAME", "")
-
-    if repo_name and repo_name in config.repos:
-        repos_to_process = [repo_name]
-    else:
-        repos_to_process = config.active_repos
+    repos_to_process = config.active_repos
+    repo_override = os.environ.get("REPO_NAME", "")
+    if repo_override:
+        repos_to_process = [r for r in repos_to_process if r == repo_override]
 
     for repo_name in repos_to_process:
         repo_config = config.get(repo_name)
         if not repo_config or not repo_config.active:
             continue
 
-        print(f"Processing {repo_name}...")
-
         try:
-            clone_dir = clone_or_pull(ORG, repo_name, WORKSPACE)
+            pr_url = process_repo(client, repo_name, repo_config, state, agents_context)
+            if pr_url:
+                print(f"  PR created: {pr_url}")
         except Exception as e:
-            print(f"  Failed to clone/pull {repo_name}: {e}")
-            continue
-
-        base_commit = state.get_last_commit(repo_name)
-        try:
-            changed_files = scan_repo(RepoInfo(repo_name, clone_dir), base_commit)
-        except Exception as e:
-            print(f"  Failed to scan {repo_name}: {e}")
-            changed_files = []
-
-        if not changed_files:
-            print(f"No changes in {repo_name}")
-            continue
-
-        description = os.environ.get("ISSUE_DESCRIPTION", f"Changes in {', '.join(changed_files)}")
-
-        classification = classify_issue(client, description)
-        pri = classification.get("priority", "unknown")
-        cat = classification.get("category", "unknown")
-        print(f"Classified as {pri} priority: {cat}")
-
-        plan = create_plan(client, repo_name, description, changed_files)
-        if not plan:
-            print(f"No plan generated for {repo_name}")
-            continue
-
-        branch = f"agent-fix-{repo_name.lower()}-{int(__import__('time').time())}"
-        create_pr_branch(str(clone_dir), branch)
-
-        for subtask in plan[:MAX_ITERATIONS]:
-            files = subtask.get("files", [])
-            for f in files:
-                filepath = clone_dir / f
-                if not filepath.exists():
-                    print(f"  File {f} not found, skipping")
-                    continue
-
-                code = filepath.read_text(encoding="utf-8")
-                if not state.can_use_tokens(len(code)):
-                    print("  Token budget exceeded, stopping")
-                    break
-
-                state.start_task(f"{repo_name}:{f}")
-                fix = generate_fix(client, repo_name, subtask["step"], f, code)
-                apply_patch(filepath, fix)
-                state.record_tokens(len(code) + len(fix))
-
-                test_code, test_out = run_tests(clone_dir, repo_config.test_framework)
-                lint_code, lint_out = run_linter(clone_dir, repo_config.lint_command)
-
-                if test_code != 0:
-                    print(f"  Tests failed, iteration limit: {test_out[:200]}")
-                state.finish_task()
-
-        commit_message = f"agent: {classification.get('explanation', description)[:72]}"
-        commit_and_push(str(clone_dir), commit_message)
-
-        pr_body_data = {
-            "problem": description,
-            "change": "\n".join(f"- {s['step']}" for s in plan),
-            "testing": "Test and lint results logged in run output",
-            "risk": classification.get("priority", "medium"),
-        }
-        body = create_pr_body(pr_body_data)
-        base = repo_config.get("base_branch", "master") if hasattr(repo_config, "get") else "master"
-        pr_url = create_pull_request(str(clone_dir), f"[agent] {commit_message}", body, base)
-        if pr_url and repo_config.has_tests:
-            enable_auto_merge(str(clone_dir), int(pr_url.rstrip("/").split("/")[-1]))
-
-        state.set_last_commit(repo_name, "HEAD")
+            print(f"  Failed on {repo_name}: {e}")
 
     state.save(STATE_PATH)
-    push_state(AGENT_REPO, STATE_PATH)
+    push_state(AGENT_REPO)
     client.close()
 
 

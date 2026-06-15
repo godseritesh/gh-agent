@@ -1,21 +1,26 @@
-name: Agent - Daily Scan
+name: Agent - Proactive Research & Development
 on:
   schedule:
     - cron: "0 8 * * 1-5"  # weekdays 8am UTC
   workflow_dispatch:
+    inputs:
+      repo:
+        description: "Specific repo (leave empty for auto-pick)"
+        required: false
+        type: string
 
 env:
   ORG_NAME: godseritesh
 
 jobs:
-  scan:
+  research-and-implement:
     runs-on: ubuntu-latest
     environment: prod
     steps:
       - name: Checkout agent repo
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # needed for state branch
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -36,27 +41,26 @@ jobs:
 
       - name: Fetch state from agent-state branch
         run: |
-          git fetch origin agent-state 2>/dev/null || git branch agent-state HEAD
-          git show origin/agent-state:agent-state.json > agent-state.json 2>/dev/null || true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          git fetch origin agent-state 2>/dev/null || true
+          for f in agent-state.json AGENTS-*.md; do
+            git show "origin/agent-state:$f" > "$f" 2>/dev/null || true
+          done
 
-      - name: Configure git for state pushes
+      - name: Configure git
         run: |
-          git config user.name "gh-agent[bot]"
-          git config user.email "gh-agent[bot]@users.noreply.github.com"
+          git config user.name "riteshgodse"
+          git config user.email "riteshgodse@gmail.com"
 
-      - name: Run daily scan
+      - name: Research & implement
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           AGENT_REPO_DIR: ${{ github.workspace }}
+          REPO_NAME: ${{ inputs.repo || '' }}
         run: python -m agent.main
 
-      - name: Push updated state to agent-state branch
+      - name: Push state + AGENTS.md to agent-state branch
         run: |
-          git add agent-state.json 2>/dev/null || true
-          git commit -m "update state [skip ci]" 2>/dev/null || true
+          git add agent-state.json AGENTS-*.md 2>/dev/null || true
+          git diff --cached --quiet || git commit -m "update state [skip ci]"
           git push origin HEAD:agent-state 2>/dev/null || true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

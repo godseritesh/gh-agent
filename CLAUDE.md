@@ -70,25 +70,24 @@ require constant clarification.
 
 ### 5.1 Mission
 
-Build an automated agent powered by Hugging Face Inference API (free tier) that:
-- Monitors repos in the godseritesh GitHub organization
-- Detects bugs, issues, and feature opportunities
-- Evaluates business and audience relevance
-- Plans fixes/features, breaks them into subtasks
-- Implements changes following strict engineering rules
-- Tests changes, creates PRs, auto-merges to master
-- Triggers deployment and verifies correctness post-deploy
+An AI agent that **proactively maintains and improves** the godseritesh GitHub organization.
+It works like a silent staff engineer who, every day:
+- **Researches** one repo deeply — reads the codebase, runs linters, analyzes structure
+- **Suggests** improvements — missing tests, error handling gaps, security issues, feature gaps
+- **Implements** the best suggestion — writes production code, adds tests, runs them
+- **Deploys** via automated PR + auto-merge
+
+No human triggers needed. The agent initiates everything itself: research → plan → code → test → PR → merge → deploy.
 
 ### 5.2 Target Repositories
 
-Active repos under godseritesh:
+Active repos under godseritesh (agent proactively researches and improves these):
 
 | Repo | Stack | Focus |
 |---|---|---|
 | SkyLink | Java, Spring Boot, MySQL, REST, JUnit | Airline reservation system |
 | nss-platform | Spring Boot, React, PostgreSQL, JWT, Docker | Event polling & blood donation |
 | Map_My_Ganapati | Next.js, Firebase, Leaflet, OpenStreetMap | Festival navigation app |
-| OptiHeart | Python, TensorFlow, Keras, Streamlit | CNN-based health prediction |
 | Intelligent_Traffic_Manager_Agent | Python, GNN, RL, SUMO | ML traffic optimization |
 | godseritesh.github.io | React, TypeScript, Tailwind, Framer Motion | Portfolio website |
 
@@ -128,51 +127,51 @@ Cost model: **Zero.** No API keys, no paid tiers, no cloud compute.
 
 ### 5.5 Workflow Pipeline
 
-#### Step 1: Repository Inventory & CI Audit
-- Use `GET /orgs/{org}/repos` to list repos
-- Check `.github/workflows/`, `.travis.yml`, `.gitlab-ci.yml`, `Jenkinsfile`
-- Detect code quality tools (CodeQL, etc.)
-- Output: inventory, tech stacks, CI/quality tooling
+#### Step 1: Deep Repo Research
+- Clone the repo
+- Build file tree with line counts, detect test files, identify tech stack
+- Read key files (README, build files, configs, CI workflows)
+- Run linter to get current code quality snapshot
+- LLM analyzes the full codebase structure and returns improvement suggestions
 
-#### Step 2: Issue Detection (Event-Driven)
-- On push: compare `last_checked_commit` to HEAD, analyze changed files only
-- On issue opened: classify issue, check relevance
-- On PR opened: review diff with LLM
-- On schedule: full scan of repos without recent events
+#### Step 2: Suggestion Scoring
+- Score each suggestion by: impact (user-facing value), effort (implementation cost)
+- Filter by effort budget (max "medium" per day)
+- Pick highest-impact suggestion that fits budget
+- One change per day max
 
-#### Step 3: Prioritization & Planning
-- Score by: business impact, security risk, user-reported severity, component visibility
-- LLM proposes plan with subtasks in format: `[task] → verify: [check]`
-- Surface tradeoffs if multiple approaches exist
+#### Step 3: Implementation Planning
+- LLM produces a step-by-step plan from the selected suggestion
+- Plan format: `[{step, verify, files}]`
+- Max 3 subtasks per change
 
 #### Step 4: Implementation (Test-in-the-Loop)
 For each subtask (max 3 iterations):
-1. Generate a failing test that reproduces the bug
-2. Prompt LLM to produce minimal code change
-3. Run the test suite (if `test_framework` is set in config)
-4. If tests fail, analyze failure and refine patch
-5. If tests pass, proceed
-6. Run linters as additional QA gate
+1. LLM generates the implementation code
+2. Apply the patch
+3. Run test suite (if `test_framework` is set in config)
+4. Run linter
+5. If tests fail, output logged for later human review
 
-If no test framework: lint-only + AI review, no auto-merge.
+If no test framework: lint-only, no auto-merge.
 
 #### Step 5: PR & Auto-Merge
-- Commit to feature branch
-- Create PR via `gh pr create`
+- Commit to a feature branch (`agent-{category}-{repo}-{timestamp}`)
+- Create PR via `gh pr create` with structured template
 - CI runs automatically
 - Enable auto-merge: `gh pr merge --auto --squash`
 - PR merges when all required checks pass
 
 #### Step 6: Deployment & Monitoring
 - Post-merge: build/publish or run smoke tests
-- HTTP health checks, API call verification
-- LLM-based evaluation (small model) to judge change quality
+- Sanity checks via HTTP or API calls
+- LLM-based evaluation to judge change quality
 - Log results to GitHub Actions output
 
 #### Step 7: Daily Cadence
-- GitHub Actions `schedule` trigger (daily backup)
-- Run on repos without recent events
-- One high-priority change max per day
+- GitHub Actions `schedule` trigger (weekdays 8am UTC)
+- Research one repo per day (round-robin)
+- At most one PR per day — focused, minimal, tested
 
 ### 5.6 Engineering Rules (Per-Repo)
 
@@ -199,3 +198,29 @@ System is working if:
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to
 overcomplication, and clarifying questions come before implementation rather than after mistakes.
+
+---
+
+## Progress
+
+### Done
+- CLAUDE.md created with behavioral guidelines + full agent spec
+- Architecture review: modular sub-agents over monolithic pipeline
+- All core Python modules: config.py, state.py, sync_state.py, hf_client.py, scanner.py, planner.py, coder.py, pr.py, main.py
+- GitHub Actions main workflow: agent-main.yml (schedule-driven, weekdays 8am UTC)
+- 48 unit tests across 8 test files, all passing (ruff lint: clean)
+- Repo pushed to https://github.com/godseritesh/gh-agent (public)
+- agent-state branch created for state persistence
+- HF_TOKEN secret set in "prod" environment
+- First workflow run completed: all 5 active repos cloned & analyzed
+- Pipeline: reactive → proactive (research → plan → implement)
+- **AGENTS.md system** (`agent/agents_md.py`): per-repo context cache stored on agent-state branch. First run writes AGENTS-<repo>.md via deep analysis; subsequent runs load cached context (skip full re-scan if no new commits). Shipped features appended after each PR.
+- **EOD Email Notification** (`agent/notify.py`): SMTP daily summary (weekdays 1:30pm UTC = 6:30pm IST) via `agent-eod-summary.yml` workflow. Summarizes repos researched, changes shipped, PR URLs, token usage. Requires SMTP_HOST/PORT/USER/PASS/TO secrets.
+- **State tracking**: `shipped_today` + `repos_seen_today` in agent-state.json for EOD summary; auto-reset daily.
+- **sync_state.py** handles AGENTS-*.md files alongside agent-state.json.
+
+### In Progress
+- (none)
+
+### Blocked
+- (none)
