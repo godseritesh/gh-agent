@@ -2,7 +2,7 @@ name: Agent EOD Summary
 
 on:
   schedule:
-    - cron: "0 11 * * 1-5"  # weekdays 4:30pm IST (11:00 UTC)
+    - cron: "30 14 * * 1-5"  # weekdays 8pm IST (14:30 UTC)
   workflow_dispatch:
 
 env:
