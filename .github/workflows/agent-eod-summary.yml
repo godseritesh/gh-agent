@@ -25,7 +25,7 @@ jobs:
           git show "origin/agent-state:agent-state.json" > agent-state.json 2>/dev/null || true
       - name: Send EOD summary email
         env:
-          BREVO_API_KEY: ${{ secrets.SMTP_PASS }}
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
           BREVO_FROM: ${{ secrets.SMTP_FROM }}
           BREVO_TO: ${{ secrets.SMTP_TO }}
         run: python -c "import json; from agent.notify import build_summary, send_email; from pathlib import Path; p=Path('agent-state.json'); state=json.loads(p.read_text()) if p.exists() else {}; send_email('Agent Daily Summary', build_summary(state))"
