@@ -1,7 +1,7 @@
 name: Agent - Proactive Research & Development
 on:
   schedule:
-    - cron: "0 8 * * 1-5"  # weekdays 8am UTC
+    - cron: "30 10 * * 1-5"  # weekdays 4pm IST (10:30 UTC)
   workflow_dispatch:
     inputs:
       repo:
