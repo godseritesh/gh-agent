@@ -58,7 +58,7 @@ def send_email(subject: str, body: str, to: str | None = None) -> bool:
     user = os.environ.get("SMTP_USER", "")
     password = os.environ.get("SMTP_PASS", "")
     recipient = to or os.environ.get("SMTP_TO", user)
-    sender_name = os.environ.get("SMTP_FROM_NAME", "gh-agent")
+    sender_email = os.environ.get("SMTP_FROM", recipient)
 
     if not user or not password:
         print("  SMTP credentials not configured, skipping email")
@@ -66,7 +66,7 @@ def send_email(subject: str, body: str, to: str | None = None) -> bool:
 
     msg = MIMEText(body, "plain", "utf-8")
     msg["Subject"] = subject
-    msg["From"] = f"{sender_name} <{user}>"
+    msg["From"] = f"gh-agent <{sender_email}>"
     msg["To"] = recipient
 
     try:

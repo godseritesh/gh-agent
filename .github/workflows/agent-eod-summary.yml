@@ -30,4 +30,5 @@ jobs:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           SMTP_TO: ${{ secrets.SMTP_TO }}
+          SMTP_FROM: ${{ secrets.SMTP_FROM }}
         run: python -c "import json; from agent.notify import build_summary, send_email; from pathlib import Path; p=Path('agent-state.json'); state=json.loads(p.read_text()) if p.exists() else {}; send_email('Agent Daily Summary', build_summary(state))"
