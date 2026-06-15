@@ -7,8 +7,8 @@ import httpx
 
 FREE_MODELS = [
     "meta-llama/Llama-3.2-3B-Instruct",
-    "microsoft/Phi-3-mini-4k-instruct",
-    "HuggingFaceH4/zephyr-7b-beta",
+    "microsoft/Phi-3.5-mini-instruct",
+    "Qwen/Qwen2.5-7B-Instruct",
 ]
 
 RATE_LIMIT_REMAINING_HEADER = "x-ratelimit-remaining"
@@ -33,7 +33,7 @@ class HFClient:
         self,
         token: str | None = None,
         *,
-        base_url: str = "https://router.huggingface.co/hf-inference/v1/chat/completions",
+        base_url: str = "https://router.huggingface.co/v1/chat/completions",
         timeout: float = DEFAULT_TIMEOUT,
     ) -> None:
         self.base_url = base_url.rstrip("/")
