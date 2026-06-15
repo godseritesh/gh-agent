@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 
+from agent.coder import strip_fences
 from agent.hf_client import HFClient
 from agent.scanner import RepoAnalysis
 
@@ -59,10 +60,8 @@ def analyze_repo(client: HFClient, analysis: RepoAnalysis) -> list[dict]:
     prompt = REVIEW_PROMPT.format(context=context[:12000])
     result = client.generate(prompt, parameters={"max_new_tokens": 1000})
     try:
-        cleaned = result.strip()
-        for prefix in ["```json", "```"]:
-            cleaned = cleaned.removeprefix(prefix)
-        cleaned = cleaned.removesuffix("```").strip()
+        cleaned = strip_fences(result)
+        cleaned = cleaned.removeprefix("json").strip()
         suggestions = json.loads(cleaned)
         if isinstance(suggestions, dict) and "suggestions" in suggestions:
             suggestions = suggestions["suggestions"]
@@ -98,11 +97,16 @@ def create_plan(client: HFClient, repo: str, suggestion: dict) -> list[dict]:
     prompt = PLAN_PROMPT.format(repo=repo, suggestion=suggestion["title"], files=", ".join(files))
     result = client.generate(prompt, parameters={"max_new_tokens": 500})
     try:
-        cleaned = result.strip()
-        for prefix in ["```json", "```"]:
-            cleaned = cleaned.removeprefix(prefix)
-        cleaned = cleaned.removesuffix("```").strip()
-        return json.loads(cleaned)
+        cleaned = strip_fences(result)
+        cleaned = cleaned.removeprefix("json").strip()
+        plan = json.loads(cleaned)
+        # Normalize file paths: strip repo name prefix if present
+        repo_prefix = repo + "/"
+        for step in plan:
+            step["files"] = [
+                f.removeprefix(repo_prefix) for f in step.get("files", [])
+            ]
+        return plan
     except (json.JSONDecodeError, ValueError):
         return []
 

@@ -121,6 +121,7 @@ def process_repo(
     create_pr_branch(str(clone_dir), branch)
 
     # 6. Implement each step
+    changed = False
     for subtask in plan[:MAX_ITERATIONS]:
         files = subtask.get("files", [])
         for f in files:
@@ -137,7 +138,9 @@ def process_repo(
             lang = _detect_language(f)
             state.start_task(f"{repo_name}:{f}")
             new_code = implement_step(client, repo_name, subtask["step"], f, code, lang)
-            apply_patch(filepath, new_code)
+            if new_code != code:
+                apply_patch(filepath, new_code)
+                changed = True
             state.record_tokens(len(code) + len(new_code))
 
             tf = repo_config.test_framework if repo_config else None
@@ -150,6 +153,10 @@ def process_repo(
             if lint_code != 0:
                 print(f"  Lint issues: {lint_out[:200]}")
             state.finish_task()
+
+    if not changed:
+        print("  No files were modified, skipping PR")
+        return None
 
     # 7. Create PR
     commit_message = f"agent: {best.get('rationale', best['title'])[:72]}"

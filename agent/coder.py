@@ -1,9 +1,18 @@
 from __future__ import annotations
 
+import re
 import subprocess
 from pathlib import Path
 
 from agent.hf_client import HFClient
+
+
+def strip_fences(text: str) -> str:
+    """Remove markdown code fences from generated code."""
+    text = re.sub(r"^```[a-zA-Z]*\n?", "", text.strip())
+    text = re.sub(r"\n?```$", "", text.strip())
+    return text.strip()
+
 
 IMPLEMENT_PROMPT = """You are implementing a change in {repo}.
 
@@ -39,7 +48,8 @@ def implement_step(
     prompt = IMPLEMENT_PROMPT.format(
         repo=repo, step=step, filepath=filepath, language=language, code=code,
     )
-    return client.generate(prompt, parameters={"max_new_tokens": 1500})
+    result = client.generate(prompt, parameters={"max_new_tokens": 1500})
+    return strip_fences(result)
 
 
 def generate_test(
@@ -49,7 +59,8 @@ def generate_test(
     language: str = "python",
 ) -> str:
     prompt = TEST_PROMPT.format(repo=repo, language=language, code=code)
-    return client.generate(prompt, parameters={"max_new_tokens": 1000})
+    result = client.generate(prompt, parameters={"max_new_tokens": 1000})
+    return strip_fences(result)
 
 
 def apply_patch(filepath: Path, new_content: str) -> None:
