@@ -1,19 +1,18 @@
-"""EOD email notification via SMTP.
+"""EOD email notification via Brevo Transactional Email API.
 
-Sends a markdown-formatted daily summary to the user's Gmail inbox.
-Requires SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS env vars.
-
-Gmail setup: enable 2FA, create App Password at
-https://myaccount.google.com/apppasswords
+Sends a daily summary to the user's Gmail inbox.
+Requires BREVO_API_KEY env var (same value used as SMTP_PASS).
+Optionally BREVO_FROM (verified sender email) and BREVO_TO (recipient).
 """
 
 from __future__ import annotations
 
+import json
 import os
-import smtplib
 from datetime import UTC, datetime
-from email.mime.text import MIMEText
 from typing import Any
+
+import httpx
 
 
 def build_summary(state: dict[str, Any]) -> str:
@@ -52,30 +51,50 @@ def build_summary(state: dict[str, Any]) -> str:
 
 
 def send_email(subject: str, body: str, to: str | None = None) -> bool:
-    """Send email via SMTP. Requires env vars: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS."""
-    host = os.environ.get("SMTP_HOST", "smtp.gmail.com")
-    port = int(os.environ.get("SMTP_PORT", "587"))
-    user = os.environ.get("SMTP_USER", "")
-    password = os.environ.get("SMTP_PASS", "")
-    recipient = to or os.environ.get("SMTP_TO", user)
-    sender_email = os.environ.get("SMTP_FROM", recipient)
+    """Send email via Brevo Transactional Email API.
 
-    if not user or not password:
-        print("  SMTP credentials not configured, skipping email")
+    Requires env vars: BREVO_API_KEY (the API key), BREVO_FROM (verified sender email).
+    BREVO_TO (recipient) defaults to BREVO_FROM if not set.
+    Also falls back to SMTP_HOST/PORT/USER/PASS/BREVO_FROM for backward compat.
+    """
+    api_key = (
+        os.environ.get("BREVO_API_KEY")
+        or os.environ.get("SMTP_PASS", "")
+    )
+    from_email = os.environ.get("BREVO_FROM") or os.environ.get("SMTP_FROM", "")
+    to_email = to or os.environ.get("BREVO_TO") or os.environ.get("SMTP_TO", "")
+
+    if not api_key or not from_email or not to_email:
+        print(f"  Missing config: api_key={'yes' if api_key else 'no'}, "
+              f"from={'yes' if from_email else 'no'}, to={'yes' if to_email else 'no'}")
         return False
 
-    msg = MIMEText(body, "plain", "utf-8")
-    msg["Subject"] = subject
-    msg["From"] = f"gh-agent <{sender_email}>"
-    msg["To"] = recipient
+    payload = {
+        "sender": {"name": "gh-agent", "email": from_email},
+        "to": [{"email": to_email}],
+        "subject": subject,
+        "textContent": body,
+    }
 
     try:
-        with smtplib.SMTP(host, port) as server:
-            server.starttls()
-            server.login(user, password)
-            server.send_message(msg)
-        print(f"  Email sent to {recipient}")
-        return True
-    except smtplib.SMTPException as e:
+        with httpx.Client() as client:
+            resp = client.post(
+                "https://api.brevo.com/v3/smtp/email",
+                json=payload,
+                headers={
+                    "api-key": api_key,
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                },
+                timeout=30,
+            )
+            if resp.status_code in (200, 201):
+                msg_id = resp.json().get("messageId", "")
+                print(f"  Email sent to {to_email} (msgId: {msg_id})")
+                return True
+            else:
+                print(f"  Email failed ({resp.status_code}): {resp.text[:300]}")
+                return False
+    except Exception as e:
         print(f"  Email failed: {e}")
         return False
