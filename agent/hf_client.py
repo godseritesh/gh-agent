@@ -6,9 +6,9 @@ from typing import Any
 import httpx
 
 FREE_MODELS = [
-    "Qwen/Qwen3-27B",
-    "google/gemma-4-4b",
-    "microsoft/phi-4",
+    "meta-llama/Llama-3.2-3B-Instruct",
+    "microsoft/Phi-3-mini-4k-instruct",
+    "HuggingFaceH4/zephyr-7b-beta",
 ]
 
 RATE_LIMIT_REMAINING_HEADER = "x-ratelimit-remaining"
