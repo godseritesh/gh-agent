@@ -29,11 +29,11 @@ repos:
     active: true
 
   OptiHeart_Retinal_Insight_to_Cardiac_Health:
-    test_framework: pytest
+    test_framework: null
     build_command: null
-    lint_command: ruff check .
+    lint_command: null
     deploy_command: null
-    active: true
+    active: false
 
   Intelligent_Traffic_Manager_Agent:
     test_framework: pytest
