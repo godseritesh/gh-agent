@@ -10,7 +10,7 @@ FIXTURES = Path(__file__).parent / "fixtures"
 def test_load_valid_config():
     cfg = AgentConfig.load(FIXTURES / "valid_config.yaml")
     assert "SkyLink" in cfg.repos
-    assert "OptiHeart" in cfg.repos
+    assert "OptiHeart_Retinal_Insight_to_Cardiac_Health" in cfg.repos
     assert cfg.repos["SkyLink"].test_framework == "junit"
     assert cfg.repos["SkyLink"].active is True
     assert cfg.repos["SkyLink"].has_tests is True

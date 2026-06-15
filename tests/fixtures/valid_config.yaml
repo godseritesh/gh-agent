@@ -6,7 +6,7 @@ repos:
     deploy_command: null
     active: true
 
-  OptiHeart:
+  OptiHeart_Retinal_Insight_to_Cardiac_Health:
     test_framework: pytest
     build_command: null
     lint_command: ruff check .

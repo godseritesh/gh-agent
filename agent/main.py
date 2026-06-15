@@ -47,9 +47,18 @@ def main() -> None:
 
         print(f"Processing {repo_name}...")
 
-        clone_dir = clone_or_pull(ORG, repo_name, WORKSPACE)
+        try:
+            clone_dir = clone_or_pull(ORG, repo_name, WORKSPACE)
+        except Exception as e:
+            print(f"  Failed to clone/pull {repo_name}: {e}")
+            continue
+
         base_commit = state.get_last_commit(repo_name)
-        changed_files = scan_repo(RepoInfo(repo_name, clone_dir), base_commit)
+        try:
+            changed_files = scan_repo(RepoInfo(repo_name, clone_dir), base_commit)
+        except Exception as e:
+            print(f"  Failed to scan {repo_name}: {e}")
+            changed_files = []
 
         if not changed_files:
             print(f"No changes in {repo_name}")
