@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import subprocess
 from typing import Any
 
@@ -21,17 +22,49 @@ PR_TEMPLATE = """## Problem
 """
 
 
+def _get_token() -> str | None:
+    return os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
+
+
+def _inject_token_into_remote(repo_dir: str) -> None:
+    """Inject GITHUB_TOKEN into the remote URL so git push can authenticate."""
+    token = _get_token()
+    if not token:
+        return
+    result = subprocess.run(
+        ["git", "remote", "get-url", "origin"],
+        cwd=repo_dir, capture_output=True, text=True,
+    )
+    if result.returncode != 0:
+        return
+    url = result.stdout.strip()
+    if "://" not in url or "@" in url:
+        return  # already authenticated or SSH
+    # Inject token: https://github.com/org/repo -> https://x-access-token:TOKEN@github.com/org/repo
+    updated = url.replace("://", f"://x-access-token:{token}@")
+    subprocess.run(
+        ["git", "remote", "set-url", "origin", updated],
+        cwd=repo_dir, capture_output=True,
+    )
+
+
 def create_pr_branch(repo_dir: str, branch_name: str) -> None:
     subprocess.run(
         ["git", "checkout", "-b", branch_name],
         cwd=repo_dir, capture_output=True, check=True,
     )
+    _inject_token_into_remote(repo_dir)
 
 
 def commit_and_push(repo_dir: str, message: str) -> None:
     subprocess.run(["git", "add", "-A"], cwd=repo_dir, capture_output=True, check=True)
     subprocess.run(["git", "commit", "-m", message], cwd=repo_dir, capture_output=True, check=True)
-    subprocess.run(["git", "push", "origin", "HEAD"], cwd=repo_dir, capture_output=True, check=True)
+    result = subprocess.run(
+        ["git", "push", "origin", "HEAD"],
+        cwd=repo_dir, capture_output=True, text=True,
+    )
+    if result.returncode != 0:
+        print(f"  Push failed: {result.stderr.strip()[:200]}")
 
 
 def create_pr_body(plan: dict[str, Any]) -> str:
@@ -52,8 +85,10 @@ def create_pull_request(repo_dir: str, title: str, body: str, base: str = "maste
             "--base", base,
         ],
         cwd=repo_dir, capture_output=True, text=True,
+        env={**os.environ, "GITHUB_TOKEN": _get_token() or ""},
     )
     if result.returncode != 0:
+        print(f"  PR creation failed: {result.stderr.strip()[:200]}")
         return None
     return result.stdout.strip()
 
