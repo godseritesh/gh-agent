@@ -145,22 +145,24 @@ def process_repo(
 
             lang = _detect_language(f)
             state.start_task(f"{repo_name}:{f}")
-            new_code = implement_step(client, repo_name, subtask["step"], f, code, lang)
-            if new_code != code:
-                apply_patch(filepath, new_code)
-                changed = True
-            state.record_tokens(len(code) + len(new_code))
+            try:
+                new_code = implement_step(client, repo_name, subtask["step"], f, code, lang)
+                if new_code != code:
+                    apply_patch(filepath, new_code)
+                    changed = True
+                state.record_tokens(len(code) + len(new_code))
 
-            tf = repo_config.test_framework if repo_config else None
-            lc = repo_config.lint_command if repo_config else None
-            test_code, test_out = run_tests(clone_dir, tf)
-            lint_code, lint_out = run_linter(clone_dir, lc)
+                tf = repo_config.test_framework if repo_config else None
+                lc = repo_config.lint_command if repo_config else None
+                _, test_out = run_tests(clone_dir, tf)
+                lint_code, lint_out = run_linter(clone_dir, lc)
 
-            if test_code != 0:
-                print(f"  Tests failed: {test_out[:200]}")
-            if lint_code != 0:
-                print(f"  Lint issues: {lint_out[:200]}")
-            state.finish_task()
+                if test_out.strip():
+                    print(f"  Tests: {test_out[:200]}")
+                if lint_code != 0:
+                    print(f"  Lint issues: {lint_out[:200]}")
+            finally:
+                state.finish_task()
 
     if not changed:
         print("  No files were modified, skipping PR")

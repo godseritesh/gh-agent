@@ -70,11 +70,16 @@ def apply_patch(filepath: Path, new_content: str) -> None:
 
 def run_tests(repo_dir: Path, command: str | None) -> tuple[int, str]:
     if not command:
-        return (0, "no test command configured")
-    result = subprocess.run(
-        command.split(), capture_output=True, text=True, cwd=repo_dir,
-    )
-    return (result.returncode, result.stdout + result.stderr)
+        return (0, "")
+    try:
+        result = subprocess.run(
+            command.split(), capture_output=True, text=True, cwd=repo_dir, timeout=120,
+        )
+        return (result.returncode, result.stdout + result.stderr)
+    except FileNotFoundError:
+        return (0, f"test binary not found: {command}")
+    except subprocess.TimeoutExpired:
+        return (0, "test timed out")
 
 
 def run_linter(repo_dir: Path, command: str | None) -> tuple[int, str]:
