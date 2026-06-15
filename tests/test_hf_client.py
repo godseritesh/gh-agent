@@ -6,17 +6,21 @@ from agent.hf_client import FREE_MODELS, HFApiError, HFClient, HFRateLimitError
 def test_generate_successful_response():
     client = HFClient("fake-token")
     call_count = 0
+    captured = {}
 
     def mock_call(model, prompt, **kwargs):
-        nonlocal call_count
+        nonlocal call_count, captured
         call_count += 1
-        assert model == FREE_MODELS[0]
-        return [{"generated_text": "test prompt the answer"}]
+        captured["model"] = model
+        captured["prompt"] = prompt
+        return {"choices": [{"message": {"content": "the answer"}}]}
 
     client._call_model = mock_call
     result = client.generate("test prompt")
     assert result == "the answer"
     assert call_count == 1
+    assert captured["model"] == FREE_MODELS[0]
+    assert captured["prompt"] == "test prompt"
 
 
 def test_fallback_on_rate_limit():
@@ -28,7 +32,7 @@ def test_fallback_on_rate_limit():
         call_count += 1
         if call_count == 1:
             raise HFRateLimitError("rate limited")
-        return [{"generated_text": "test prompt fallback result"}]
+        return {"choices": [{"message": {"content": "fallback result"}}]}
 
     client._call_model = mock_call
     result = client.generate("test prompt")
@@ -60,3 +64,8 @@ def test_rate_limit_exhausts_retries():
     with pytest.raises(HFApiError, match="All models failed"):
         client.generate("test prompt")
     assert call_count == len(FREE_MODELS)
+
+
+def test_chat_completions_url():
+    client = HFClient("fake-token")
+    assert "v1/chat/completions" in client.base_url
