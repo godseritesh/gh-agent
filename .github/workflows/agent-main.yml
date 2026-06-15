@@ -54,6 +54,7 @@ jobs:
       - name: Research & implement
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           AGENT_REPO_DIR: ${{ github.workspace }}
           REPO_NAME: ${{ inputs.repo || '' }}
