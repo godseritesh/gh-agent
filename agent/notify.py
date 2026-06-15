@@ -82,7 +82,7 @@ def send_email(subject: str, body: str, to: str | None = None) -> bool:
                 "https://api.brevo.com/v3/smtp/email",
                 json=payload,
                 headers={
-                    "Authorization": f"Bearer {api_key}",
+                    "api-key": api_key,
                     "Content-Type": "application/json",
                     "Accept": "application/json",
                 },
