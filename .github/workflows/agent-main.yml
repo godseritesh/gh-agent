@@ -48,8 +48,8 @@ jobs:
 
       - name: Configure git
         run: |
-          git config user.name "riteshgodse"
-          git config user.email "riteshgodse@gmail.com"
+          git config user.name "godseritesh"
+          git config user.email "godseritesh@gmail.com"
 
       - name: Research & implement
         env:
