@@ -1,0 +1,30 @@
+name: Agent - Repo Inventory
+on:
+  schedule:
+    - cron: "0 6 * * 0"  # weekly Sunday
+  workflow_dispatch:
+
+env:
+  ORG_NAME: godseritesh
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install agent
+        run: pip install -e ".[dev]"
+
+      - name: Run inventory
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          AGENT_REPO_DIR: ${{ github.workspace }}
+        run: python -m agent.main

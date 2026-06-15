@@ -1,0 +1,4 @@
+repos:
+  BadRepo:
+    test_framework: 123
+    active: maybe

@@ -1,0 +1,12 @@
+{
+  "last_checked_commit": {
+    "SkyLink": "abc123",
+    "OptiHeart": "def456"
+  },
+  "token_budget": {
+    "date": "2026-06-15",
+    "tokens_used": 5000,
+    "daily_limit": 30000
+  },
+  "in_progress": null
+}

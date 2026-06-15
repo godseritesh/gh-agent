@@ -1,0 +1,14 @@
+repos:
+  SkyLink:
+    test_framework: junit
+    build_command: mvn clean compile
+    lint_command: mvn checkstyle:check
+    deploy_command: null
+    active: true
+
+  OptiHeart:
+    test_framework: pytest
+    build_command: null
+    lint_command: ruff check .
+    deploy_command: null
+    active: true

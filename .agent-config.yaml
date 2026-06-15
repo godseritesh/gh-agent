@@ -1,0 +1,50 @@
+# Per-repo agent configuration
+# Schema:
+#   test_framework: string | null  (null = lint-only, no auto-merge)
+#   build_command: string | null
+#   lint_command: string | null
+#   deploy_command: string | null
+#   active: bool (false = archived, monitor-only)
+
+repos:
+  SkyLink:
+    test_framework: junit
+    build_command: mvn clean compile
+    lint_command: mvn checkstyle:check
+    deploy_command: null
+    active: true
+
+  nss-platform:
+    test_framework: junit
+    build_command: mvn clean compile
+    lint_command: mvn checkstyle:check
+    deploy_command: docker compose up -d --build
+    active: true
+
+  Map_My_Ganapati:
+    test_framework: jest
+    build_command: npm run build
+    lint_command: npm run lint
+    deploy_command: null
+    active: true
+
+  OptiHeart:
+    test_framework: pytest
+    build_command: null
+    lint_command: ruff check .
+    deploy_command: null
+    active: true
+
+  Intelligent_Traffic_Manager_Agent:
+    test_framework: pytest
+    build_command: null
+    lint_command: ruff check .
+    deploy_command: null
+    active: true
+
+  godseritesh.github.io:
+    test_framework: null
+    build_command: npm run build
+    lint_command: npm run lint
+    deploy_command: null
+    active: true
