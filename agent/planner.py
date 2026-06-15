@@ -91,7 +91,7 @@ def pick_best_suggestion(suggestions: list[dict], max_effort: str = "medium") ->
     return scored[0][2]
 
 
-def create_plan(client: HFClient, repo: str, suggestion: dict) -> list[dict]:
+def create_plan(client: HFClient, repo: str, suggestion: dict, valid_files: set[str] | None = None) -> list[dict]:
     """Create a step-by-step implementation plan for a suggestion."""
     files = suggestion.get("files_likely_involved", [])
     prompt = PLAN_PROMPT.format(repo=repo, suggestion=suggestion["title"], files=", ".join(files))
@@ -106,6 +106,9 @@ def create_plan(client: HFClient, repo: str, suggestion: dict) -> list[dict]:
             step["files"] = [
                 f.removeprefix(repo_prefix) for f in step.get("files", [])
             ]
+            # Filter to only files that actually exist in the repo
+            if valid_files:
+                step["files"] = [f for f in step["files"] if f in valid_files]
         return plan
     except (json.JSONDecodeError, ValueError):
         return []

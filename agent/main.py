@@ -110,7 +110,8 @@ def process_repo(
     print(f"\n=== Implementing: {best['title']} ===")
 
     # 4. Create plan
-    plan = create_plan(client, repo_name, best)
+    valid_files = _get_valid_files(clone_dir)
+    plan = create_plan(client, repo_name, best, valid_files)
     if not plan:
         print("  No plan generated")
         return None
@@ -119,6 +120,13 @@ def process_repo(
     ts = int(__import__("time").time())
     branch = f"agent-{best.get('category','improvement')}-{repo_name.lower()}-{ts}"
     create_pr_branch(str(clone_dir), branch)
+
+    # Ensure git user config is set in target repo
+    subprocess.run(
+        ["git", "config", "user.name", "godseritesh"], cwd=clone_dir, capture_output=True)
+    subprocess.run(
+        ["git", "config", "user.email", "riteshgodse008@gmail.com"],
+        cwd=clone_dir, capture_output=True)
 
     # 6. Implement each step
     changed = False
@@ -213,6 +221,21 @@ def _detect_language(filepath: str) -> str:
 
 def _extract_pr_number(pr_url: str) -> int:
     return int(pr_url.rstrip("/").split("/")[-1])
+
+
+def _get_valid_files(clone_dir: Path) -> set[str]:
+    """Get set of relative file paths in a cloned repo."""
+    files: set[str] = set()
+    for path in clone_dir.rglob("*"):
+        if path.is_file():
+            rel = path.relative_to(clone_dir)
+            parts = rel.parts
+            if any(p.startswith(".") and p not in (".github",) for p in parts):
+                continue
+            if any(p in {"__pycache__", "node_modules", "target", "build"} for p in parts):
+                continue
+            files.add(str(rel.as_posix()))
+    return files
 
 
 def main() -> None:
