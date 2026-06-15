@@ -134,11 +134,8 @@ def process_repo(
         files = subtask.get("files", [])
         for f in files:
             filepath = clone_dir / f
-            if not filepath.exists():
-                print(f"  File {f} not found, skipping")
-                continue
 
-            code = filepath.read_text(encoding="utf-8")
+            code = filepath.read_text(encoding="utf-8") if filepath.exists() else ""
             if not state.can_use_tokens(len(code)):
                 print("  Token budget exceeded, stopping")
                 return None

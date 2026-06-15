@@ -7,7 +7,6 @@ Optionally BREVO_FROM (verified sender email) and BREVO_TO (recipient).
 
 from __future__ import annotations
 
-import json
 import os
 from datetime import UTC, datetime
 from typing import Any

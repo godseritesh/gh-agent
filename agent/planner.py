@@ -30,18 +30,20 @@ a minimal implementation plan.
 
 Suggestion: {suggestion}
 
-Relevant files: {files}
+Existing files in this repo:
+{valid_files}
 
 Respond with a JSON array of steps:
 [
   {{
     "step": "concrete action",
     "verify": "how to verify this step",
-    "files": ["file paths to modify"]
+    "files": ["file paths to modify or create"]
   }}
 ]
 
-Max 3 steps. Each step must be concrete (specific function/class to change)."""
+Max 3 steps. Each step must reference an actual existing file path from the list above,
+or a standard new file path (e.g. src/test/... for a test file)."""
 
 REVIEW_COMMAND_PROMPT = """Given this suggestion and repo context, output a single bash command
 that would help verify or understand the area of code involved. Output ONLY the command, no
@@ -91,10 +93,14 @@ def pick_best_suggestion(suggestions: list[dict], max_effort: str = "medium") ->
     return scored[0][2]
 
 
-def create_plan(client: HFClient, repo: str, suggestion: dict, valid_files: set[str] | None = None) -> list[dict]:
+def create_plan(
+    client: HFClient, repo: str, suggestion: dict, valid_files: set[str] | None = None,
+) -> list[dict]:
     """Create a step-by-step implementation plan for a suggestion."""
-    files = suggestion.get("files_likely_involved", [])
-    prompt = PLAN_PROMPT.format(repo=repo, suggestion=suggestion["title"], files=", ".join(files))
+    valid_list = "\n".join(sorted(valid_files)) if valid_files else "(unknown)"
+    prompt = PLAN_PROMPT.format(
+        repo=repo, suggestion=suggestion["title"], valid_files=valid_list,
+    )
     result = client.generate(prompt, parameters={"max_new_tokens": 500})
     try:
         cleaned = strip_fences(result)
@@ -106,9 +112,6 @@ def create_plan(client: HFClient, repo: str, suggestion: dict, valid_files: set[
             step["files"] = [
                 f.removeprefix(repo_prefix) for f in step.get("files", [])
             ]
-            # Filter to only files that actually exist in the repo
-            if valid_files:
-                step["files"] = [f for f in step["files"] if f in valid_files]
         return plan
     except (json.JSONDecodeError, ValueError):
         return []
