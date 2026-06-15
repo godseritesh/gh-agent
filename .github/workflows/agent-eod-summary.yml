@@ -1,9 +1,9 @@
-name: Agent - EOD Summary
+name: Agent EOD Summary
 
 on:
   schedule:
-    - cron: "30 13 * * 1-5"  # 1:30pm UTC = 7pm IST / 6:30pm India adjusted
-  workflow_dispatch: {}
+    - cron: "30 13 * * 1-5"
+  workflow_dispatch:
 
 env:
   ORG_NAME: godseritesh
@@ -13,28 +13,16 @@ jobs:
     runs-on: ubuntu-latest
     environment: prod
     steps:
-      - name: Checkout agent repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
-
-      - name: Install agent
-        run: pip install -e ".[dev]"
-
-      - name: Fetch state from agent-state branch
-        run: |
-          git fetch origin agent-state 2>/dev/null || exit 0
-          git show origin/agent-state:agent-state.json > agent-state.json 2>/dev/null || true
-          # Also fetch AGENTS files for context
-          for f in $(git ls-tree --name-only origin/agent-state | grep '^AGENTS-'); do
-            git show "origin/agent-state:$f" > "$f" 2>/dev/null || true
-          done
-
+      - run: pip install -e ".[dev]"
+      - run: |
+          git fetch origin agent-state 2>/dev/null || true
+          git show "origin/agent-state:agent-state.json" > agent-state.json 2>/dev/null || true
       - name: Send EOD summary email
         env:
           SMTP_HOST: ${{ secrets.SMTP_HOST }}
@@ -42,16 +30,4 @@ jobs:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           SMTP_TO: ${{ secrets.SMTP_TO }}
-        run: python -c "
-import json, sys
-from agent.notify import build_summary, send_email
-from pathlib import Path
-p = Path('agent-state.json')
-if p.exists():
-    state = json.loads(p.read_text())
-    body = build_summary(state)
-    send_email('Agent Daily Summary', body)
-    print('Summary sent')
-else:
-    print('No state found, nothing to report')
-"
+        run: python -c "import json; from agent.notify import build_summary, send_email; from pathlib import Path; p=Path('agent-state.json'); state=json.loads(p.read_text()) if p.exists() else {}; send_email('Agent Daily Summary', build_summary(state))"
