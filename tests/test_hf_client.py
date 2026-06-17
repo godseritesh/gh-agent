@@ -68,4 +68,20 @@ def test_rate_limit_exhausts_retries():
 
 def test_chat_completions_url():
     client = HFClient("fake-token")
-    assert "v1/chat/completions" in client.base_url
+    assert "api-inference.huggingface.co" in client.base_url
+
+def test_model_specific_url():
+    client = HFClient("fake-token")
+    captured = {}
+
+    def mock_post(url, json, **kwargs):
+        captured["url"] = url
+        from unittest.mock import Mock
+        resp = Mock()
+        resp.status_code = 200
+        resp.json.return_value = {"choices": [{"message": {"content": "ok"}}]}
+        return resp
+
+    client._client.post = mock_post
+    client.generate("hi")
+    assert "models/Qwen/Qwen2.5-7B-Instruct/v1/chat/completions" in captured["url"]

@@ -33,10 +33,12 @@ class HFClient:
         self,
         token: str | None = None,
         *,
-        base_url: str = "https://api-inference.huggingface.co/v1/chat/completions",
+        base_url: str = "https://api-inference.huggingface.co",
         timeout: float = DEFAULT_TIMEOUT,
+        hf_token: str | None = None,
     ) -> None:
         self.base_url = base_url.rstrip("/")
+        token = token or hf_token
         headers = {"Authorization": f"Bearer {token}"} if token else {}
         self._client = httpx.Client(headers=headers, timeout=timeout)
 
@@ -44,13 +46,13 @@ class HFClient:
         self._client.close()
 
     def _call_model(self, model: str, prompt: str, **kwargs: Any) -> dict[str, Any]:
+        url = f"{self.base_url}/models/{model}/v1/chat/completions"
         payload = {
-            "model": model,
             "messages": [{"role": "user", "content": prompt}],
             **kwargs,
         }
         for attempt in range(1, MAX_RETRIES + 1):
-            resp = self._client.post(self.base_url, json=payload)
+            resp = self._client.post(url, json=payload)
             if resp.status_code == 429:
                 remaining = resp.headers.get(RATE_LIMIT_REMAINING_HEADER, "0")
                 if attempt < MAX_RETRIES and int(remaining) < 100:
