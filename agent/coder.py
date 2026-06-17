@@ -19,7 +19,7 @@ IMPLEMENT_PROMPT = """You are implementing a change in {repo}.
 Step: {step}
 File: {filepath}
 
-Project dependencies (available packages/libraries):
+Project build file (only these dependencies are available):
 ```{language}
 {build_context}
 ```
@@ -29,8 +29,12 @@ Current code:
 {code}
 ```
 
-Implement the change described in the step. Preserve existing style.
-Use ONLY packages and imports listed in the project dependencies above.
+RULES:
+- Do NOT add any new imports. Only use imports already in the code or build file.
+- Do NOT change project structure (packages, directory layout, framework).
+- Make ONLY the minimal change described in the step. No unrelated changes.
+- Preserve existing style exactly.
+
 Output ONLY the complete new file content. No explanations, no markdown fences."""
 
 TEST_PROMPT = """You are writing a test for {repo}.

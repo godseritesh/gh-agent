@@ -43,7 +43,12 @@ Respond with a JSON array of steps:
 ]
 
 Max 3 steps. Each step must reference an actual existing file path from the list above,
-or a standard new file path (e.g. src/test/... for a test file)."""
+or a standard new file path (e.g. src/test/... for a test file).
+
+IMPORTANT: File paths must be exact. For example, CI files are under '.github/workflows/'
+not 'github/workflows/'. Double-check all paths match the existing files list."""
+
+
 
 REVIEW_COMMAND_PROMPT = """Given this suggestion and repo context, output a single bash command
 that would help verify or understand the area of code involved. Output ONLY the command, no
