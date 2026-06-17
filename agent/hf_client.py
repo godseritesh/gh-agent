@@ -76,6 +76,39 @@ class HFClient:
         if self._groq_client:
             self._groq_client.close()
 
+    def _discover_free_models(self, max_count: int = 5) -> list[str]:
+        """Query HF Hub for popular free chat models under ~10B params."""
+        try:
+            resp = self._client.get(
+                "https://huggingface.co/api/models",
+                params={
+                    "pipeline_tag": "text-generation",
+                    "sort": "downloads",
+                    "direction": -1,
+                    "limit": 50,
+                },
+                timeout=10.0,
+            )
+            if resp.status_code != 200:
+                return []
+            models = resp.json()
+        except Exception:
+            return []
+
+        discovered: list[str] = []
+        for model in models:
+            model_id: str = model.get("id", "")
+            lid = model_id.lower()
+            if not any(kw in lid for kw in _CHAT_KW):
+                continue
+            m = _PARAM_PATTERN.search(lid)
+            if m and float(m.group(1)) > 10:
+                continue
+            discovered.append(model_id)
+            if len(discovered) >= max_count:
+                break
+        return discovered
+
     def _call_groq(self, model: str, prompt: str, **kwargs: Any) -> str:
         if not self._groq_client:
             raise GroqApiError(0, "No Groq API key configured")
