@@ -18,12 +18,19 @@ IMPLEMENT_PROMPT = """You are implementing a change in {repo}.
 
 Step: {step}
 File: {filepath}
+
+Project dependencies (available packages/libraries):
+```{language}
+{build_context}
+```
+
 Current code:
 ```{language}
 {code}
 ```
 
 Implement the change described in the step. Preserve existing style.
+Use ONLY packages and imports listed in the project dependencies above.
 Output ONLY the complete new file content. No explanations, no markdown fences."""
 
 TEST_PROMPT = """You are writing a test for {repo}.
@@ -44,9 +51,11 @@ def implement_step(
     filepath: str,
     code: str,
     language: str = "python",
+    build_context: str = "",
 ) -> str:
     prompt = IMPLEMENT_PROMPT.format(
-        repo=repo, step=step, filepath=filepath, language=language, code=code,
+        repo=repo, step=step, filepath=filepath, language=language,
+        code=code, build_context=build_context or "(none)",
     )
     result = client.generate(prompt, parameters={"max_new_tokens": 1500})
     return strip_fences(result)

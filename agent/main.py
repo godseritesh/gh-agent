@@ -134,6 +134,7 @@ def process_repo(
         cwd=clone_dir, capture_output=True)
 
     # 6. Implement each step
+    build_context = _get_build_context(clone_dir, analysis)
     changed = False
     for subtask in plan[:MAX_ITERATIONS]:
         files = subtask.get("files", [])
@@ -148,7 +149,9 @@ def process_repo(
             lang = _detect_language(f)
             state.start_task(f"{repo_name}:{f}")
             try:
-                new_code = implement_step(client, repo_name, subtask["step"], f, code, lang)
+                new_code = implement_step(
+                    client, repo_name, subtask["step"], f, code, lang, build_context,
+                )
                 if not new_code.strip():
                     print(f"  [debug] empty output for {f}")
                 elif new_code != code:
@@ -228,6 +231,18 @@ def _detect_language(filepath: str) -> str:
 
 def _extract_pr_number(pr_url: str) -> int:
     return int(pr_url.rstrip("/").split("/")[-1])
+
+
+def _get_build_context(clone_dir: Path, analysis: RepoAnalysis) -> str:
+    """Read project build file content to prevent hallucinated imports."""
+    for name in ["pom.xml", "build.gradle", "package.json", "Cargo.toml", "pyproject.toml"]:
+        content = analysis.key_files.get(name)
+        if content:
+            return content
+        p = clone_dir / name
+        if p.exists():
+            return p.read_text(encoding="utf-8", errors="ignore")[:2000]
+    return ""
 
 
 def _get_valid_files(clone_dir: Path) -> set[str]:
