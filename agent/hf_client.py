@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import time
 from typing import Any
 
@@ -15,6 +16,9 @@ RATE_LIMIT_REMAINING_HEADER = "x-ratelimit-remaining"
 DEFAULT_TIMEOUT = 60.0
 MAX_RETRIES = 3
 RETRY_BACKOFF = 2.0
+
+_PARAM_PATTERN = re.compile(r"(\d+\.?\d*)[bB]")
+_CHAT_KW = frozenset(["instruct", "chat", "it", "dialog"])
 
 
 class HFApiError(Exception):
@@ -45,6 +49,39 @@ class HFClient:
     def close(self) -> None:
         self._client.close()
 
+    def _discover_free_models(self, max_count: int = 5) -> list[str]:
+        """Query HF Hub for popular free chat models under ~10B params."""
+        try:
+            resp = self._client.get(
+                "https://huggingface.co/api/models",
+                params={
+                    "pipeline_tag": "text-generation",
+                    "sort": "downloads",
+                    "direction": -1,
+                    "limit": 50,
+                },
+                timeout=10.0,
+            )
+            if resp.status_code != 200:
+                return []
+            models = resp.json()
+        except Exception:
+            return []
+
+        discovered: list[str] = []
+        for model in models:
+            model_id: str = model.get("id", "")
+            lid = model_id.lower()
+            if not any(kw in lid for kw in _CHAT_KW):
+                continue
+            m = _PARAM_PATTERN.search(lid)
+            if m and float(m.group(1)) > 10:
+                continue
+            discovered.append(model_id)
+            if len(discovered) >= max_count:
+                break
+        return discovered
+
     def _call_model(self, model: str, prompt: str, **kwargs: Any) -> dict[str, Any]:
         url = f"{self.base_url}/models/{model}/v1/chat/completions"
         payload = {
@@ -66,8 +103,13 @@ class HFClient:
         raise HFRateLimitError("Exhausted retries")
 
     def generate(self, prompt: str, **kwargs: Any) -> str:
+        models = self._discover_free_models()
+        for m in FREE_MODELS:
+            if m not in models:
+                models.append(m)
+
         errors: list[Exception] = []
-        for model in FREE_MODELS:
+        for model in models:
             try:
                 result = self._call_model(model, prompt, **kwargs)
                 content = (

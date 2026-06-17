@@ -5,6 +5,7 @@ from agent.hf_client import FREE_MODELS, HFApiError, HFClient, HFRateLimitError
 
 def test_generate_successful_response():
     client = HFClient("fake-token")
+    client._discover_free_models = lambda max_count=5: []
     call_count = 0
     captured = {}
 
@@ -25,6 +26,7 @@ def test_generate_successful_response():
 
 def test_fallback_on_rate_limit():
     client = HFClient("fake-token")
+    client._discover_free_models = lambda max_count=5: []
     call_count = 0
 
     def mock_call(model, prompt, **kwargs):
@@ -42,6 +44,7 @@ def test_fallback_on_rate_limit():
 
 def test_all_models_fail():
     client = HFClient("fake-token")
+    client._discover_free_models = lambda max_count=5: []
 
     def mock_call(model, prompt, **kwargs):
         raise HFApiError(500, "internal error")
@@ -53,6 +56,7 @@ def test_all_models_fail():
 
 def test_rate_limit_exhausts_retries():
     client = HFClient("fake-token")
+    client._discover_free_models = lambda max_count=5: []
     call_count = 0
 
     def mock_call(model, prompt, **kwargs):
@@ -72,6 +76,7 @@ def test_chat_completions_url():
 
 def test_model_specific_url():
     client = HFClient("fake-token")
+    client._discover_free_models = lambda max_count=5: []
     captured = {}
 
     def mock_post(url, json, **kwargs):
