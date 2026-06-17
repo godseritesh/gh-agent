@@ -117,10 +117,12 @@ class HFClient:
         elapsed = time.monotonic() - self._last_groq_call
         if elapsed < 2.0:
             time.sleep(2.0 - elapsed)
+        # Groq uses OpenAI-compatible API — strip HuggingFace-specific parameters
+        groq_kwargs = {k: v for k, v in kwargs.items() if k != "parameters"}
         payload = {
             "model": model,
             "messages": [{"role": "user", "content": prompt}],
-            **kwargs,
+            **groq_kwargs,
         }
         resp = self._groq_client.post(
             "https://api.groq.com/openai/v1/chat/completions", json=payload
