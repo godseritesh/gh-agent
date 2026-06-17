@@ -1,6 +1,13 @@
 import pytest
 
-from agent.hf_client import FREE_MODELS, HFApiError, HFClient, HFRateLimitError
+from agent.hf_client import (
+    FREE_MODELS,
+    GROQ_FREE_MODELS,
+    GroqApiError,
+    HFApiError,
+    HFClient,
+    HFRateLimitError,
+)
 
 
 def test_generate_successful_response():
@@ -70,23 +77,53 @@ def test_rate_limit_exhausts_retries():
     assert call_count == len(FREE_MODELS)
 
 
-def test_chat_completions_url():
-    client = HFClient("fake-token")
-    assert "api-inference.huggingface.co" in client.base_url
+def test_groq_used_when_key_provided():
+    client = HFClient("fake-token", groq_api_key="gsk-test")
+    called = []
+    client._call_groq = lambda model, prompt, **kwargs: (
+        called.append(model) or "groq reply"
+    )
+    result = client.generate("test")
+    assert result == "groq reply"
+    assert called[0] == GROQ_FREE_MODELS[0]
 
-def test_model_specific_url():
+
+def test_groq_skipped_when_no_key():
     client = HFClient("fake-token")
+    client._call_groq = lambda model, prompt, **kwargs: (_ for _ in ()).throw(
+        GroqApiError(0, "should not be called")
+    )
     client._discover_free_models = lambda max_count=5: []
-    captured = {}
 
-    def mock_post(url, json, **kwargs):
-        captured["url"] = url
-        from unittest.mock import Mock
-        resp = Mock()
-        resp.status_code = 200
-        resp.json.return_value = {"choices": [{"message": {"content": "ok"}}]}
-        return resp
+    def mock_call(model, prompt, **kwargs):
+        return {"choices": [{"message": {"content": "hf reply"}}]}
 
-    client._client.post = mock_post
-    client.generate("hi")
-    assert "models/Qwen/Qwen2.5-7B-Instruct/v1/chat/completions" in captured["url"]
+    client._call_model = mock_call
+    result = client.generate("test")
+    assert result == "hf reply"
+
+
+def test_groq_fallback_on_error():
+    client = HFClient("fake-token", groq_api_key="gsk-test")
+    groq_call_count = 0
+
+    def mock_groq(model, prompt, **kwargs):
+        nonlocal groq_call_count
+        groq_call_count += 1
+        raise GroqApiError(500, "groq error")
+
+    client._call_groq = mock_groq
+    client._discover_free_models = lambda max_count=5: []
+
+    def mock_call(model, prompt, **kwargs):
+        return {"choices": [{"message": {"content": "hf fallback"}}]}
+
+    client._call_model = mock_call
+    result = client.generate("test")
+    assert result == "hf fallback"
+    assert groq_call_count == len(GROQ_FREE_MODELS)
+
+
+def test_router_url():
+    client = HFClient("fake-token")
+    assert "router.huggingface.co" in client.base_url

@@ -21,6 +21,7 @@ def test_missing_config_file():
 
 def test_api_500_error():
     client = HFClient("fake-token")
+    client._discover_free_models = lambda max_count=5: []
 
     def mock_call(model, prompt, **kwargs):
         raise HFApiError(500, "Internal Server Error")
@@ -32,6 +33,7 @@ def test_api_500_error():
 
 def test_api_timeout_is_error():
     client = HFClient("fake-token")
+    client._discover_free_models = lambda max_count=5: []
 
     def mock_call(model, prompt, **kwargs):
         raise HFApiError(0, "timeout")

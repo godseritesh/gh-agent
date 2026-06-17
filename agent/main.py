@@ -249,7 +249,10 @@ def main() -> None:
         agents_context[repo_name] = md_file.read_text(encoding="utf-8")
 
     hf_token = os.environ.get("HF_TOKEN")
-    client = HFClient(hf_token)
+    client = HFClient(
+        hf_token,
+        groq_api_key=os.environ.get("GROQ_API_KEY"),
+    )
 
     repos_to_process = config.active_repos
     repo_override = os.environ.get("REPO_NAME", "")
