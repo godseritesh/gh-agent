@@ -23,7 +23,7 @@ class AgentState:
         return {
             "date": datetime.now(UTC).strftime("%Y-%m-%d"),
             "tokens_used": 0,
-            "daily_limit": 30000,
+            "daily_limit": 60000,
         }
 
     @classmethod

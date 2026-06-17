@@ -128,6 +128,7 @@ class HFClient:
             .get("message", {})
             .get("content", "")
         )
+        time.sleep(2)  # stay within Groq free tier 30 RPM
         return content.strip()
 
     def _call_model(self, model: str, prompt: str, **kwargs: Any) -> dict[str, Any]:

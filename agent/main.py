@@ -109,12 +109,17 @@ def process_repo(
 
     print(f"\n=== Implementing: {best['title']} ===")
 
-    # 4. Create plan
+    # 4. Check token budget before planning
+    if not state.can_use_tokens(500):
+        print("  Token budget insufficient for planning, skipping")
+        return None
+
     valid_files = _get_valid_files(clone_dir)
     plan = create_plan(client, repo_name, best, valid_files)
     if not plan:
         print("  No plan generated")
         return None
+    print(f"  Plan: {[s['step'] for s in plan]}")
 
     # 5. Feature branch
     ts = int(__import__("time").time())
@@ -144,9 +149,12 @@ def process_repo(
             state.start_task(f"{repo_name}:{f}")
             try:
                 new_code = implement_step(client, repo_name, subtask["step"], f, code, lang)
-                if new_code != code:
+                if not new_code.strip():
+                    print(f"  [debug] empty output for {f}")
+                elif new_code != code:
                     apply_patch(filepath, new_code)
                     changed = True
+                    print(f"  [modified] {f}")
                 state.record_tokens(len(code) + len(new_code))
 
                 tf = repo_config.test_framework if repo_config else None
