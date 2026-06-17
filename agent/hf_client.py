@@ -60,6 +60,7 @@ class HFClient:
         headers = {"Authorization": f"Bearer {token}"} if token else {}
         self._client = httpx.Client(headers=headers, timeout=timeout)
         self._groq_key = groq_api_key
+        self._last_groq_call: float = 0.0
         if groq_api_key:
             self._groq_client = httpx.Client(
                 headers={
@@ -112,6 +113,10 @@ class HFClient:
     def _call_groq(self, model: str, prompt: str, **kwargs: Any) -> str:
         if not self._groq_client:
             raise GroqApiError(0, "No Groq API key configured")
+        # Enforce 2s minimum between Groq calls (30 RPM limit)
+        elapsed = time.monotonic() - self._last_groq_call
+        if elapsed < 2.0:
+            time.sleep(2.0 - elapsed)
         payload = {
             "model": model,
             "messages": [{"role": "user", "content": prompt}],
@@ -120,6 +125,7 @@ class HFClient:
         resp = self._groq_client.post(
             "https://api.groq.com/openai/v1/chat/completions", json=payload
         )
+        self._last_groq_call = time.monotonic()
         if resp.status_code != 200:
             raise GroqApiError(resp.status_code, resp.text[:200])
         result = resp.json()
@@ -128,7 +134,6 @@ class HFClient:
             .get("message", {})
             .get("content", "")
         )
-        time.sleep(2)  # stay within Groq free tier 30 RPM
         return content.strip()
 
     def _call_model(self, model: str, prompt: str, **kwargs: Any) -> dict[str, Any]:
@@ -157,7 +162,8 @@ class HFClient:
             for model in GROQ_FREE_MODELS:
                 try:
                     return self._call_groq(model, prompt, **kwargs)
-                except GroqApiError:
+                except GroqApiError as e:
+                    print(f"  [groq] {model} failed: {e}")
                     continue
 
         # 2. Dynamic discovery from HF Hub
