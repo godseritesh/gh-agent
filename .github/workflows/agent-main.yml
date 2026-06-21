@@ -44,6 +44,7 @@ jobs:
 
       - name: Fetch state from agent-state branch
         run: |
+          shopt -s nullglob
           git fetch origin agent-state 2>/dev/null || true
           for f in agent-state.json AGENTS-*.md; do
             git show "origin/agent-state:$f" > "$f" 2>/dev/null || true
@@ -64,8 +65,10 @@ jobs:
           REPO_NAME: ${{ inputs.repo || '' }}
         run: python -m agent.main
 
-      - name: Push state + AGENTS.md to agent-state branch
+      - name: Push state + AGENTS.md + INDEX files to agent-state branch
         run: |
-          git add agent-state.json AGENTS-*.md 2>/dev/null || true
+          shopt -s nullglob
+          git add agent-state.json AGENTS-*.md INDEX-*.json
           git diff --cached --quiet || git commit -m "update state [skip ci]"
-          git push origin HEAD:agent-state 2>/dev/null || true
+          git fetch origin agent-state
+          git push origin HEAD:agent-state --force

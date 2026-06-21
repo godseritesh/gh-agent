@@ -39,6 +39,7 @@ jobs:
 
       - name: Fetch state and previous indexes
         run: |
+          shopt -s nullglob
           git fetch origin agent-state 2>/dev/null || true
           for f in INDEX-*.json; do
             git show "origin/agent-state:$f" > "$f" 2>/dev/null || true
@@ -53,7 +54,8 @@ jobs:
         run: |
           git config user.name "godseritesh"
           git config user.email "riteshgodse008@gmail.com"
-          git add INDEX-*.json 2>/dev/null || true
+          shopt -s nullglob
+          git add INDEX-*.json
           git diff --cached --quiet || git commit -m "update indexes [skip ci]"
-          git fetch origin agent-state 2>/dev/null || true
-          git push origin HEAD:agent-state 2>/dev/null || true
+          git fetch origin agent-state
+          git push origin HEAD:agent-state --force

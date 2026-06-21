@@ -50,12 +50,20 @@ def _inject_token_into_remote(repo_dir: str) -> None:
     )
 
 
-def create_pr_branch(repo_dir: str, branch_name: str) -> None:
+def create_pr_branch(repo_dir: str, branch_name: str, base: str = "master") -> None:
+    _inject_token_into_remote(repo_dir)
+    subprocess.run(
+        ["git", "checkout", base],
+        cwd=repo_dir, capture_output=True, check=True,
+    )
+    subprocess.run(
+        ["git", "pull", "--ff-only"],
+        cwd=repo_dir, capture_output=True, check=False,
+    )
     subprocess.run(
         ["git", "checkout", "-b", branch_name],
         cwd=repo_dir, capture_output=True, check=True,
     )
-    _inject_token_into_remote(repo_dir)
 
 
 def commit_and_push(repo_dir: str, message: str) -> None:
