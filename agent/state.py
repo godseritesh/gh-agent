@@ -31,7 +31,7 @@ class AgentState:
         p = Path(path)
         if not p.exists():
             return cls()
-        raw = p.read_text(encoding="utf-8")
+        raw = p.read_text(encoding="utf-8-sig")
         try:
             data = json.loads(raw)
         except json.JSONDecodeError as e:
