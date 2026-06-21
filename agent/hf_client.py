@@ -19,6 +19,9 @@ GROQ_FREE_MODELS = [
     "qwen/qwen3-32b",
 ]
 
+GITHUB_MODELS_MODELS = ["gpt-4o-mini"]
+GITHUB_MODELS_URL = "https://models.github.ai/inference/chat/completions"
+
 RATE_LIMIT_REMAINING_HEADER = "x-ratelimit-remaining"
 DEFAULT_TIMEOUT = 60.0
 MAX_RETRIES = 3
@@ -45,6 +48,12 @@ class GroqApiError(Exception):
         super().__init__(f"Groq API error {status}: {message}")
 
 
+class GithubModelsApiError(Exception):
+    def __init__(self, status: int, message: str) -> None:
+        self.status = status
+        super().__init__(f"GitHub Models API error {status}: {message}")
+
+
 class HFClient:
     def __init__(
         self,
@@ -54,6 +63,7 @@ class HFClient:
         timeout: float = DEFAULT_TIMEOUT,
         hf_token: str | None = None,
         groq_api_key: str | None = None,
+        gh_token: str | None = None,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         token = token or hf_token
@@ -71,11 +81,23 @@ class HFClient:
             )
         else:
             self._groq_client = None
+        if gh_token:
+            self._gh_client = httpx.Client(
+                headers={
+                    "Authorization": f"Bearer {gh_token}",
+                    "Content-Type": "application/json",
+                },
+                timeout=timeout,
+            )
+        else:
+            self._gh_client = None
 
     def close(self) -> None:
         self._client.close()
         if self._groq_client:
             self._groq_client.close()
+        if self._gh_client:
+            self._gh_client.close()
 
     def _discover_free_models(self, max_count: int = 5) -> list[str]:
         """Query HF Hub for popular free chat models under ~10B params."""
@@ -138,6 +160,25 @@ class HFClient:
         )
         return content.strip()
 
+    def _call_github_models(self, model: str, prompt: str, **kwargs: Any) -> str:
+        if not self._gh_client:
+            raise GithubModelsApiError(0, "No GH_TOKEN configured")
+        payload = {
+            "model": model,
+            "messages": [{"role": "user", "content": prompt}],
+            **kwargs,
+        }
+        resp = self._gh_client.post(GITHUB_MODELS_URL, json=payload)
+        if resp.status_code != 200:
+            raise GithubModelsApiError(resp.status_code, resp.text[:200])
+        result = resp.json()
+        content = (
+            result.get("choices", [{}])[0]
+            .get("message", {})
+            .get("content", "")
+        )
+        return content.strip()
+
     def _call_model(self, model: str, prompt: str, **kwargs: Any) -> dict[str, Any]:
         payload = {
             "model": model,
@@ -159,7 +200,16 @@ class HFClient:
         raise HFRateLimitError("Exhausted retries")
 
     def generate(self, prompt: str, **kwargs: Any) -> str:
-        # 1. Try Groq first (free, fast, reliable)
+        # 1. Try GitHub Models first (free via GH_TOKEN, best code quality)
+        if self._gh_client:
+            for model in GITHUB_MODELS_MODELS:
+                try:
+                    return self._call_github_models(model, prompt, **kwargs)
+                except GithubModelsApiError as e:
+                    print(f"  [gh-models] {model} failed: {e}")
+                    continue
+
+        # 2. Try Groq (free, fast)
         if self._groq_client:
             for model in GROQ_FREE_MODELS:
                 try:
@@ -168,13 +218,13 @@ class HFClient:
                     print(f"  [groq] {model} failed: {e}")
                     continue
 
-        # 2. Dynamic discovery from HF Hub
+        # 3. Dynamic discovery from HF Hub
         models = self._discover_free_models()
         for m in FREE_MODELS:
             if m not in models:
                 models.append(m)
 
-        # 3. Try HF router
+        # 4. Try HF router (deprecated, credits depleted)
         errors: list[Exception] = []
         for model in models:
             try:

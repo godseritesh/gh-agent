@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 from pathlib import Path
@@ -42,6 +43,7 @@ def process_repo(
     repo_config: AgentConfig,
     state: AgentState,
     agents_context: dict[str, str],
+    repo_index: dict | None = None,
 ) -> str | None:
     print(f"\n=== Researching {repo_name} ===")
     agents_file = AGENT_REPO / agents_md.filename(repo_name)
@@ -77,6 +79,9 @@ def process_repo(
         analysis.detect_ci()
         if repo_config and repo_config.lint_command:
             analysis.run_linter(repo_config.lint_command)
+
+    if repo_index:
+        analysis.load_index(repo_index)
 
     state.mark_repo_seen(repo_name)
     print(f"  Stack: {', '.join(analysis.tech_stack) or 'unknown'}")
@@ -176,7 +181,21 @@ def process_repo(
         print("  No files were modified, skipping PR")
         return None
 
-    # 7. Create PR
+    # 7. Build verification before commit
+    if repo_config and repo_config.build_command:
+        print(f"  Verifying build: {repo_config.build_command}")
+        build_result = subprocess.run(
+            repo_config.build_command.split(),
+            capture_output=True, text=True, cwd=str(clone_dir), timeout=120,
+        )
+        if build_result.returncode != 0:
+            build_output = build_result.stdout + build_result.stderr
+            print(f"  Build FAILED (skipping PR):\n{build_output[:500]}")
+            changed = False
+            return None
+        print("  Build OK")
+
+    # 8. Create PR
     commit_message = f"agent: {best.get('rationale', best['title'])[:72]}"
     commit_and_push(str(clone_dir), commit_message)
 
@@ -195,7 +214,7 @@ def process_repo(
 
     state.set_last_commit(repo_name, "HEAD")
 
-    # 8. Update AGENTS.md with shipped entry
+    # 9. Update AGENTS.md with shipped entry
     shipped_entry = {
         "title": best["title"],
         "repo": repo_name,
@@ -275,6 +294,7 @@ def main() -> None:
     client = HFClient(
         hf_token,
         groq_api_key=os.environ.get("GROQ_API_KEY"),
+        gh_token=os.environ.get("GH_TOKEN"),
     )
 
     repos_to_process = config.active_repos
@@ -282,13 +302,25 @@ def main() -> None:
     if repo_override:
         repos_to_process = [r for r in repos_to_process if r == repo_override]
 
+    # Load pre-built AST indexes
+    indexes: dict[str, dict] = {}
+    for idx_file in AGENT_REPO.glob("INDEX-*.json"):
+        repo_name = idx_file.stem.replace("INDEX-", "", 1)
+        try:
+            indexes[repo_name] = json.loads(idx_file.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+
     for repo_name in repos_to_process:
         repo_config = config.get(repo_name)
         if not repo_config or not repo_config.active:
             continue
 
+        # Attach pre-built index if available
+        repo_index = indexes.get(repo_name)
+
         try:
-            pr_url = process_repo(client, repo_name, repo_config, state, agents_context)
+            pr_url = process_repo(client, repo_name, repo_config, state, agents_context, repo_index)
             if pr_url:
                 print(f"  PR created: {pr_url}")
         except Exception as e:

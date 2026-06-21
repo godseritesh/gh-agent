@@ -2,7 +2,9 @@ import pytest
 
 from agent.hf_client import (
     FREE_MODELS,
+    GITHUB_MODELS_MODELS,
     GROQ_FREE_MODELS,
+    GithubModelsApiError,
     GroqApiError,
     HFApiError,
     HFClient,
@@ -122,6 +124,55 @@ def test_groq_fallback_on_error():
     result = client.generate("test")
     assert result == "hf fallback"
     assert groq_call_count == len(GROQ_FREE_MODELS)
+
+
+def test_github_models_used_when_token_provided():
+    client = HFClient("fake-token", gh_token="gh_test")
+    called = []
+    client._call_github_models = lambda model, prompt, **kwargs: (
+        called.append(model) or "gh-models reply"
+    )
+    result = client.generate("test")
+    assert result == "gh-models reply"
+    assert called[0] == GITHUB_MODELS_MODELS[0]
+
+
+def test_github_models_fallback_to_groq():
+    client = HFClient("fake-token", gh_token="gh_test", groq_api_key="gsk-test")
+    gh_calls = []
+    groq_calls = []
+
+    def mock_gh(model, prompt, **kwargs):
+        gh_calls.append(model)
+        raise GithubModelsApiError(500, "gh error")
+
+    def mock_groq(model, prompt, **kwargs):
+        groq_calls.append(model)
+        return "groq reply"
+
+    client._call_github_models = mock_gh
+    client._call_groq = mock_groq
+    client._discover_free_models = lambda max_count=5: []
+
+    result = client.generate("test")
+    assert result == "groq reply"
+    assert len(gh_calls) == len(GITHUB_MODELS_MODELS)
+    assert groq_calls[0] == GROQ_FREE_MODELS[0]
+
+
+def test_github_models_skipped_when_no_token():
+    client = HFClient("fake-token")
+    client._call_github_models = lambda model, prompt, **kwargs: (_ for _ in ()).throw(
+        GithubModelsApiError(0, "should not be called")
+    )
+    client._discover_free_models = lambda max_count=5: []
+
+    def mock_call(model, prompt, **kwargs):
+        return {"choices": [{"message": {"content": "hf reply"}}]}
+
+    client._call_model = mock_call
+    result = client.generate("test")
+    assert result == "hf reply"
 
 
 def test_router_url():

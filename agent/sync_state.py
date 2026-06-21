@@ -20,13 +20,15 @@ STATE_FILE = "agent-state.json"
 
 
 def _files_to_sync(repo_dir: Path) -> list[Path]:
-    """Find all state files: agent-state.json + AGENTS-*.md"""
+    """Find all state files: agent-state.json + AGENTS-*.md + INDEX-*.json"""
     files = []
     state_file = repo_dir / STATE_FILE
     if state_file.exists():
         files.append(state_file)
     for agents_file in repo_dir.glob("AGENTS-*.md"):
         files.append(agents_file)
+    for index_file in repo_dir.glob("INDEX-*.json"):
+        files.append(index_file)
     return files
 
 
@@ -48,7 +50,7 @@ def pull_state(repo_dir: str | Path) -> bool:
             (repo_dir / STATE_FILE).write_text(result.stdout, encoding="utf-8")
             found = True
 
-        # Pull AGENTS-*.md files
+        # Pull AGENTS-*.md + INDEX-*.json files
         tree = subprocess.run(
             ["git", "ls-tree", "--name-only", f"origin/{STATE_BRANCH}"],
             cwd=repo_dir, capture_output=True, text=True, check=False,
@@ -56,7 +58,11 @@ def pull_state(repo_dir: str | Path) -> bool:
         if tree.returncode == 0:
             for name in tree.stdout.strip().split("\n"):
                 name = name.strip()
-                if name.startswith("AGENTS-") and name.endswith(".md"):
+                if not name:
+                    continue
+                is_agents = name.startswith("AGENTS-") and name.endswith(".md")
+                is_index = name.startswith("INDEX-") and name.endswith(".json")
+                if is_agents or is_index:
                     result = subprocess.run(
                         ["git", "show", f"origin/{STATE_BRANCH}:{name}"],
                         cwd=repo_dir, capture_output=True, text=True, check=False,

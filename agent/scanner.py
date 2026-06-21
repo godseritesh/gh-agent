@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import subprocess
 from pathlib import Path
+from typing import Any
+
+from agent.indexer import get_relevant_context
 
 
 class RepoAnalysis:
@@ -16,6 +19,7 @@ class RepoAnalysis:
         self.ci_files: list[str] = []
         self.lint_output: str = ""
         self.key_files: dict[str, str] = {}
+        self.index: dict[str, Any] | None = None
 
     def detect_stack(self) -> None:
         indicators: list[tuple[list[str], str]] = [
@@ -102,6 +106,22 @@ class RepoAnalysis:
             if (self.clone_dir / ci_file).exists():
                 self.ci_files.append(ci_file)
 
+    def load_index(self, index_data: dict[str, Any] | None) -> None:
+        self.index = index_data
+
+    def _index_queries(self) -> list[str]:
+        """Derive search queries from repo analysis for RAG context."""
+        queries = [self.name.lower()]
+        for name in self.key_files:
+            queries.append(Path(name).stem.lower())
+            if self.tech_stack:
+                queries.append(self.tech_stack[0].lower())
+        for line in self.file_tree.splitlines()[:10]:
+            stripped = line.strip().strip("(").strip()
+            if stripped and not stripped.startswith(("#", "//", "/*")):
+                queries.append(stripped.split(".")[0].split("(")[0].lower())
+        return [q for q in queries if q and len(q) > 2][:10]
+
     def to_context(self) -> str:
         parts = [
             f"# {self.name} - Codebase Analysis",
@@ -119,6 +139,11 @@ class RepoAnalysis:
             parts.append(f"\n### {name}\n```\n{content}\n```")
         if self.lint_output:
             parts.append(f"\n## Lint Output\n```\n{self.lint_output}\n```")
+        if self.index:
+            queries = self._index_queries()
+            rag = get_relevant_context(self.index, queries, max_chunks=15)
+            if rag:
+                parts.append(f"\n{rag}")
         return "\n".join(parts)
 
 

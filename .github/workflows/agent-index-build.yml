@@ -1,0 +1,82 @@
+name: Agent - Weekly Code Index Build
+on:
+  schedule:
+    - cron: "0 10 * * 0"  # Sundays 10:00 UTC
+  workflow_dispatch:  # manual trigger too
+
+env:
+  ORG_NAME: godseritesh
+
+jobs:
+  build-indexes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout agent repo
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          pip install -e ".[dev]"
+          pip install libcst  # AST parser for Python
+
+      - name: Restore target repo cache
+        uses: actions/cache@v5
+        with:
+          path: /tmp/agent-repos
+          key: agent-repos-weekly-${{ github.run_id }}
+          restore-keys: |
+            agent-repos-weekly-
+          enableCrossOsArchive: true
+
+      - name: Fetch state and previous indexes
+        run: |
+          git fetch origin agent-state 2>/dev/null || true
+          for f in INDEX-*.json; do
+            git show "origin/agent-state:$f" > "$f" 2>/dev/null || true
+          done
+
+      - name: Build indexes for all active repos
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          python -c "
+import json, os, subprocess, sys
+from pathlib import Path
+
+from agent.config import AgentConfig
+from agent.indexer import build_index, index_filename
+from agent.scanner import clone_or_pull
+
+ORG = 'godseritesh'
+WORKSPACE = Path('/tmp/agent-repos')
+config = AgentConfig.load('.agent-config.yaml')
+
+for repo_name in config.active_repos:
+    print(f'\\n=== Indexing {repo_name} ===')
+    try:
+        clone_dir = clone_or_pull(ORG, repo_name, WORKSPACE)
+        index = build_index(repo_name, clone_dir)
+        outfile = index_filename(repo_name)
+        Path(outfile).write_text(json.dumps(index, indent=2), encoding='utf-8')
+        print(f'  {len(index[\"nodes\"])} chunks from {index[\"total_files\"]} files')
+    except Exception as e:
+        print(f'  FAILED: {e}')
+"
+
+      - name: Push indexes to agent-state branch
+        run: |
+          git config user.name "godseritesh"
+          git config user.email "riteshgodse008@gmail.com"
+          git add INDEX-*.json 2>/dev/null || true
+          git diff --cached --quiet || git commit -m "update indexes [skip ci]"
+          git fetch origin agent-state 2>/dev/null || true
+          git push origin HEAD:agent-state 2>/dev/null || true

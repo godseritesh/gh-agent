@@ -15,6 +15,9 @@ env:
 jobs:
   research-and-implement:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      models: read
     environment: prod
     steps:
       - name: Checkout agent repo

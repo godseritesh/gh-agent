@@ -75,9 +75,9 @@ It works like a silent staff engineer who, every day:
 - **Researches** one repo deeply — reads the codebase, runs linters, analyzes structure
 - **Suggests** improvements — missing tests, error handling gaps, security issues, feature gaps
 - **Implements** the best suggestion — writes production code, adds tests, runs them
-- **Deploys** via automated PR + auto-merge
+- **Ships** via automated PR + auto-merge (deployment handled by target repo CI)
 
-No human triggers needed. The agent initiates everything itself: research → plan → code → test → PR → merge → deploy.
+No human triggers needed. The agent initiates everything itself: research → plan → code → test → PR → merge.
 
 ### 5.2 Target Repositories
 
@@ -100,8 +100,8 @@ Car_Rental_Website
 
 | Component | Choice | Justification |
 |---|---|---|
-| Primary LLM | HF Inference API free tier (Qwen3-27B, Phi-4, Gemma 4) | Zero cost, permissive licenses |
-| Fallback Model | Smaller HF model if primary rate-limited | Graceful degradation |
+| Primary LLM | GitHub Models GPT-4o-mini (via GH_TOKEN, free tier) | Zero cost, better code quality |
+| Fallback Model | Groq (llama-3.3-70b, llama-4-scout, qwen3-32b) → HF router (depleted) | Graceful degradation |
 | Orchestration | GitHub Actions (free tier, event-driven) | No recurring cost |
 | State | JSON file on dedicated `agent-state` branch | Zero infra, transparent |
 | Per-repo config | `.agent-config.yaml` files per repo | Explicit, DRY |
@@ -162,13 +162,7 @@ If no test framework: lint-only, no auto-merge.
 - Enable auto-merge: `gh pr merge --auto --squash`
 - PR merges when all required checks pass
 
-#### Step 6: Deployment & Monitoring
-- Post-merge: build/publish or run smoke tests
-- Sanity checks via HTTP or API calls
-- LLM-based evaluation to judge change quality
-- Log results to GitHub Actions output
-
-#### Step 7: Daily Cadence
+#### Step 6: Daily Cadence
 - GitHub Actions `schedule` trigger (weekdays 8am UTC)
 - Research one repo per day (round-robin)
 - At most one PR per day — focused, minimal, tested
@@ -180,7 +174,7 @@ If no test framework: lint-only, no auto-merge.
 - Prefer editing existing files over creating new ones
 - After changes: remove imports/variables YOUR changes made unused
 - After changes: run linters and type-checkers if available
-- Per-repo config defines: `test_framework`, `build_command`, `lint_command`, `deploy_command`
+- Per-repo config defines: `test_framework`, `build_command`, `lint_command`
 - If `test_framework` is null → lint-only, no auto-merge
 
 ### 5.7 Success Criteria
@@ -189,7 +183,6 @@ System is working if:
 - Each run produces at most one PR with a minimal, focused change
 - No unnecessary files or code appear in diffs
 - All tests pass before merge (when applicable)
-- Post-deploy smoke tests confirm no regression
 - Clarifying questions come before implementation, not after
 - Monthly GitHub Actions usage stays under 500 minutes
 - API cost: $0
@@ -218,9 +211,19 @@ overcomplication, and clarifying questions come before implementation rather tha
 - **EOD Email Notification** (`agent/notify.py`): SMTP daily summary (weekdays 1:30pm UTC = 6:30pm IST) via `agent-eod-summary.yml` workflow. Summarizes repos researched, changes shipped, PR URLs, token usage. Requires SMTP_HOST/PORT/USER/PASS/TO secrets.
 - **State tracking**: `shipped_today` + `repos_seen_today` in agent-state.json for EOD summary; auto-reset daily.
 - **sync_state.py** handles AGENTS-*.md files alongside agent-state.json.
+- **GitHub Models API** (`agent/hf_client.py`): `_call_github_models()` using GH_TOKEN at `https://models.github.ai/inference/chat/completions`. Reordered provider priority: GitHub Models → Groq → HF router.
+- **`models: read` permission** added to agent-main.yml for GitHub Models API access.
+- **Pre-commit build verification** (`agent/main.py`): runs build_command from config before committing; fails fast, skips PR.
+- **Deployment removed** from pipeline — handled by target repo CI.
+- **AST-aware RAG index** (`agent/indexer.py`, `agent/parsers/`): weekly-built code index with semantic chunks using libCST (Python), regex fallbacks (Java/TS/Kotlin), and subprocess hooks for Spoon (Java) and ts-morph (TypeScript). Stored as `INDEX-<repo>.json` on agent-state branch.
+- **Weekly index build workflow** (`.github/workflows/agent-index-build.yml`): Sundays 10:00 UTC.
+- **`sync_state.py`** now handles `INDEX-*.json` alongside `AGENTS-*.md`.
+- **RAG-enhanced context** (`agent/scanner.py`): `to_context()` appends AST-derived code snippets matching the repo domain, improving LLM understanding without full re-scan.
 
 ### In Progress
-- (none)
+- *(none)*
 
 ### Blocked
-- (none)
+- Groq TPM rate limit (6000/min on llama-3.1-8b-instant) — hits 429 after ~3-4 calls. 2s throttle insufficient. Fallback models 2-4 have unknown limits; HF router is dead (402 credits depleted).
+- LLM still hallucinating code despite build context — SecurityConfig completely rewritten, ProfileController got javax.annotation.Nullable, PollController got newIllegalArgumentException. Coder prompt hardened but not yet runner-verified after pipeline changes.
+- Windows encoding trap documented — PowerShell `>` redirection writes UTF-16 LE BOM. Must use `cmd /c "git show ... > ..."` or `[System.IO.File]::WriteAllText()` for clean UTF-8.
