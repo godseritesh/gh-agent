@@ -19,7 +19,7 @@ from agent.pr import (
 )
 from agent.scanner import RepoAnalysis, clone_or_pull
 from agent.state import AgentState
-from agent.sync_state import pull_state, push_state
+from agent.sync_state import pull_state
 
 ORG = "godseritesh"
 WORKSPACE = Path("/tmp/agent-repos")
