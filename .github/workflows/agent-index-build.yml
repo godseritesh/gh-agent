@@ -55,15 +55,15 @@ jobs:
           git config user.name "godseritesh"
           git config user.email "riteshgodse008@gmail.com"
           shopt -s nullglob
-          # Copy state files to tmp dir, switch to agent-state, restore them
+          # Copy index files to tmp dir, switch to agent-state, restore them
           mkdir -p /tmp/state
-          cp agent-state.json AGENTS-*.md INDEX-*.json /tmp/state/ 2>/dev/null || true
+          cp INDEX-*.json /tmp/state/ 2>/dev/null || true
           # Fetch existing agent-state and use as base (or create orphan)
           git fetch origin agent-state 2>/dev/null || true
           git checkout agent-state 2>/dev/null || git checkout -b agent-state origin/agent-state 2>/dev/null || git checkout --orphan agent-state
           # Remove all current tracked files, keep only state files
           git rm -rf --quiet . 2>/dev/null || true
           cp /tmp/state/* . 2>/dev/null || true
-          git add agent-state.json AGENTS-*.md INDEX-*.json
+          git add INDEX-*.json
           git diff --cached --quiet || git commit -m "update indexes [skip ci]"
           git push origin HEAD:agent-state --force
