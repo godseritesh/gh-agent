@@ -327,7 +327,6 @@ def main() -> None:
             print(f"  Failed on {repo_name}: {e}")
 
     state.save(STATE_PATH)
-    push_state(AGENT_REPO)
     client.close()
 
 
