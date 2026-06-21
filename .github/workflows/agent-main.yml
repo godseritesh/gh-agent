@@ -46,7 +46,7 @@ jobs:
         run: |
           shopt -s nullglob
           git fetch origin agent-state 2>/dev/null || true
-          for f in agent-state.json AGENTS-*.md; do
+          for f in agent-state.json AGENTS-*.md INDEX-*.json; do
             git show "origin/agent-state:$f" > "$f" 2>/dev/null || true
           done
 
