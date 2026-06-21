@@ -44,6 +44,7 @@ jobs:
           for f in agent-state.json AGENTS-*.md INDEX-*.json; do
             git show "origin/agent-state:$f" > "$f" 2>/dev/null || true
           done
+          if [ ! -f agent-state.json ]; then echo '{}' > agent-state.json; fi
 
       - name: Build indexes for all active repos
         env:
@@ -58,6 +59,7 @@ jobs:
           # Copy index files to tmp dir, switch to agent-state, restore them
           mkdir -p /tmp/state
           cp agent-state.json AGENTS-*.md INDEX-*.json /tmp/state/ 2>/dev/null || true
+          if [ ! -f /tmp/state/agent-state.json ]; then echo '{}' > /tmp/state/agent-state.json; fi
           # Fetch existing agent-state and use as base (or create orphan)
           git fetch origin agent-state 2>/dev/null || true
           git checkout agent-state 2>/dev/null || git checkout -b agent-state origin/agent-state 2>/dev/null || git checkout --orphan agent-state
