@@ -139,8 +139,14 @@ class HFClient:
         elapsed = time.monotonic() - self._last_groq_call
         if elapsed < 2.0:
             time.sleep(2.0 - elapsed)
-        # Groq uses OpenAI-compatible API — strip HuggingFace-specific parameters
-        groq_kwargs = {k: v for k, v in kwargs.items() if k != "parameters"}
+        # Groq uses OpenAI-compatible API — convert HuggingFace-specific parameters
+        params = kwargs.pop("parameters", {})
+        if isinstance(params, dict):
+            if "max_new_tokens" in params:
+                kwargs["max_tokens"] = params["max_new_tokens"]
+            if "temperature" in params:
+                kwargs["temperature"] = params["temperature"]
+        groq_kwargs = kwargs
         payload = {
             "model": model,
             "messages": [{"role": "user", "content": prompt}],
@@ -163,6 +169,13 @@ class HFClient:
     def _call_github_models(self, model: str, prompt: str, **kwargs: Any) -> str:
         if not self._gh_client:
             raise GithubModelsApiError(0, "No GH_TOKEN configured")
+        # Strip HuggingFace-specific parameters, convert to OpenAI-compatible
+        params = kwargs.pop("parameters", {})
+        if isinstance(params, dict):
+            if "max_new_tokens" in params:
+                kwargs["max_tokens"] = params["max_new_tokens"]
+            if "temperature" in params:
+                kwargs["temperature"] = params["temperature"]
         payload = {
             "model": model,
             "messages": [{"role": "user", "content": prompt}],
