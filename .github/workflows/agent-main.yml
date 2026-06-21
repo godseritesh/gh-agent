@@ -68,7 +68,14 @@ jobs:
       - name: Push state + AGENTS.md + INDEX files to agent-state branch
         run: |
           shopt -s nullglob
+          # Copy state files to tmp dir, switch to agent-state branch, restore them
+          mkdir -p /tmp/state
+          cp agent-state.json AGENTS-*.md INDEX-*.json /tmp/state/ 2>/dev/null || true
+          git fetch origin agent-state
+          git checkout agent-state 2>/dev/null || git checkout --orphan agent-state
+          # Remove all tracked files, keep only state files
+          git rm -rf --quiet . 2>/dev/null || true
+          cp /tmp/state/* . 2>/dev/null || true
           git add agent-state.json AGENTS-*.md INDEX-*.json
           git diff --cached --quiet || git commit -m "update state [skip ci]"
-          git fetch origin agent-state
           git push origin HEAD:agent-state --force
