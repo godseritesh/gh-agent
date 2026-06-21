@@ -47,7 +47,7 @@ _TS_CLASS = re.compile(
 _TS_FUNC = re.compile(
     r"(?:export\s+)?(?:default\s+)?(?:async\s+)?function\s+(\w+)\s*\("
 )
-_TS_IMPORT = re.compile(r'^import\s+(?:\{[^}]*\}\s+from\s+)?["\']([^"\']+)["\']')
+_TS_IMPORT = re.compile(r'from\s+["\']([^"\']+)["\']|^import\s+["\']([^"\']+)["\']')
 
 
 def _is_skipped(path: Path, root: Path) -> bool:
@@ -168,9 +168,11 @@ def _parse_ts_regex(filepath: Path, rel: str) -> list[dict[str, Any]]:
     lines = source.splitlines()
     imports: list[str] = []
     for line in lines:
-        m = _TS_IMPORT.match(line.strip())
+        if not line.strip().startswith("import"):
+            continue
+        m = _TS_IMPORT.search(line)
         if m:
-            imports.append(m.group(1))
+            imports.append(m.group(1) or m.group(2))
 
     nodes: list[dict[str, Any]] = []
     i = 0
@@ -270,14 +272,35 @@ def _run_tsmorph_parser(clone_dir: Path, rel: str) -> list[dict[str, Any]] | Non
         return None
 
 
+# ── Batch subprocess parser results ─────────────────────────────────────
+
+def _build_subprocess_results(clone_dir: Path) -> dict[str, list[dict[str, Any]]]:
+    """Run subprocess parsers (Spoon, ts-morph) and index nodes by file."""
+    results: dict[str, list[dict[str, Any]]] = {}
+
+    tsmorph_nodes = _run_tsmorph_parser(clone_dir, "")
+    if tsmorph_nodes:
+        for node in tsmorph_nodes:
+            f = node.get("file", "")
+            results.setdefault(f, []).append(node)
+
+    spoon_nodes = _run_spoon_parser(clone_dir, "")
+    if spoon_nodes:
+        for node in spoon_nodes:
+            f = node.get("file", "")
+            results.setdefault(f, []).append(node)
+
+    return results
+
+
 # ── Orchestrator ────────────────────────────────────────────────────────
 
 _PARSERS = {
     "python": ("libcst", lambda fp, rel: parse_python(fp, rel)),
-    "java": ("spoon+regex", lambda fp, rel: _parse_java_regex(fp, rel)),
+    "java": ("regex", lambda fp, rel: _parse_java_regex(fp, rel)),
     "kotlin": ("regex", lambda fp, rel: _parse_java_regex(fp, rel)),
-    "javascript": ("tsmorph+regex", lambda fp, rel: _parse_ts_regex(fp, rel)),
-    "typescript": ("tsmorph+regex", lambda fp, rel: _parse_ts_regex(fp, rel)),
+    "javascript": ("regex", lambda fp, rel: _parse_ts_regex(fp, rel)),
+    "typescript": ("regex", lambda fp, rel: _parse_ts_regex(fp, rel)),
 }
 
 
@@ -286,6 +309,9 @@ def build_index(repo_name: str, clone_dir: Path) -> dict[str, Any]:
     all_nodes: list[dict[str, Any]] = []
     file_imports_map: dict[str, list[str]] = {}
     total_files = 0
+
+    # Try subprocess parsers first (ts-morph, Spoon) — batch per-repo
+    subprocess_results = _build_subprocess_results(clone_dir)
 
     for filepath in sorted(clone_dir.rglob("*")):
         if not filepath.is_file():
@@ -300,12 +326,16 @@ def build_index(repo_name: str, clone_dir: Path) -> dict[str, Any]:
             continue
 
         rel = str(filepath.relative_to(clone_dir).as_posix())
-        _, parser = parser_info
 
-        try:
-            nodes = parser(filepath, rel)
-        except Exception:
-            nodes = []
+        # Use subprocess results if available, else fall back to regex
+        if rel in subprocess_results:
+            nodes = subprocess_results[rel]
+        else:
+            _, parser = parser_info
+            try:
+                nodes = parser(filepath, rel)
+            except Exception:
+                nodes = []
 
         if nodes:
             total_files += 1

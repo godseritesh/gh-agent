@@ -9,14 +9,14 @@
 repos:
   SkyLink:
     test_framework: junit
-    build_command: mvn clean compile
+    build_command: mvn clean test-compile
     lint_command: mvn checkstyle:check
     deploy_command: null
     active: true
 
   nss-platform:
     test_framework: junit
-    build_command: mvn clean compile
+    build_command: mvn clean test-compile
     lint_command: mvn checkstyle:check
     deploy_command: docker compose up -d --build
     active: true
