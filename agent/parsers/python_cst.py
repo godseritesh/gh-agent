@@ -11,7 +11,7 @@ except ImportError:
 
 
 def _get_docstring(body: list[Any]) -> str:
-    if not body:
+    if not HAS_LIBCST or not body:
         return ""
     first = body[0]
     if isinstance(first, cst.SimpleStatementLine):
@@ -30,6 +30,8 @@ def _get_docstring(body: list[Any]) -> str:
 
 def _get_source_segment(module: cst.Module, node: cst.CSTNode) -> str:
     """Extract source code for a node."""
+    if not HAS_LIBCST:
+        return ""
     code = module.code_for_node(node)
     lines = code.splitlines()
     return "\n".join(lines[:20])
@@ -57,7 +59,14 @@ def parse_python(filepath: str | Any, rel: str) -> list[dict[str, Any]]:
     return visitor.nodes
 
 
-class _IndexVisitor(cst.CSTVisitor):
+if HAS_LIBCST:
+    _CSTVisitorBase = cst.CSTVisitor
+else:
+    class _CSTVisitorBase:  # type: ignore[no-redef]
+        pass
+
+
+class _IndexVisitor(_CSTVisitorBase):
     """Collects classes, functions, methods, and imports from a Python module."""
 
     def __init__(self, source: str, rel: str) -> None:
