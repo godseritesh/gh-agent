@@ -228,8 +228,15 @@ class HFClient:
         if generation_config:
             payload["generationConfig"] = generation_config
         url = f"{GEMINI_URL}?key={self._gemini_key}"
-        resp = self._gemini_client.post(url, json=payload)
-        if resp.status_code != 200:
+        for attempt in range(1, MAX_RETRIES + 1):
+            resp = self._gemini_client.post(url, json=payload)
+            if resp.status_code == 200:
+                break
+            retryable = resp.status_code in (429, 500, 502, 503)
+            if retryable and attempt < MAX_RETRIES:
+                sleep = RETRY_BACKOFF ** attempt
+                time.sleep(sleep)
+                continue
             raise GeminiApiError(resp.status_code, resp.text[:200])
         result = resp.json()
         candidates = result.get("candidates", [])
