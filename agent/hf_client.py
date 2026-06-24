@@ -13,14 +13,17 @@ FREE_MODELS = [
 ]
 
 GROQ_FREE_MODELS = [
-    "llama-3.1-8b-instant",
+    "llama-3.3-70b-specdec",
     "llama-3.3-70b-versatile",
+    "llama-3.1-8b-instant",
     "meta-llama/llama-4-scout-17b-16e-instruct",
-    "qwen/qwen3-32b",
 ]
 
 GITHUB_MODELS_MODELS = ["gpt-4o-mini"]
 GITHUB_MODELS_URL = "https://models.github.ai/inference/chat/completions"
+
+GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
 
 RATE_LIMIT_REMAINING_HEADER = "x-ratelimit-remaining"
 DEFAULT_TIMEOUT = 60.0
@@ -54,6 +57,12 @@ class GithubModelsApiError(Exception):
         super().__init__(f"GitHub Models API error {status}: {message}")
 
 
+class GeminiApiError(Exception):
+    def __init__(self, status: int, message: str) -> None:
+        self.status = status
+        super().__init__(f"Gemini API error {status}: {message}")
+
+
 class HFClient:
     def __init__(
         self,
@@ -64,6 +73,7 @@ class HFClient:
         hf_token: str | None = None,
         groq_api_key: str | None = None,
         gh_token: str | None = None,
+        gemini_api_key: str | None = None,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         token = token or hf_token
@@ -91,6 +101,10 @@ class HFClient:
             )
         else:
             self._gh_client = None
+        self._gemini_key = gemini_api_key
+        self._gemini_client = (
+            httpx.Client(timeout=timeout) if gemini_api_key else None
+        )
 
     def close(self) -> None:
         self._client.close()
@@ -98,6 +112,8 @@ class HFClient:
             self._groq_client.close()
         if self._gh_client:
             self._gh_client.close()
+        if self._gemini_client:
+            self._gemini_client.close()
 
     def _discover_free_models(self, max_count: int = 5) -> list[str]:
         """Query HF Hub for popular free chat models under ~10B params."""
@@ -192,6 +208,37 @@ class HFClient:
         )
         return content.strip()
 
+    def _call_gemini(self, prompt: str, **kwargs: Any) -> str:
+        if not self._gemini_client:
+            raise GeminiApiError(0, "No Gemini API key configured")
+        generation_config: dict[str, Any] = {}
+        params = kwargs.pop("parameters", {})
+        if isinstance(params, dict):
+            if "max_new_tokens" in params:
+                generation_config["maxOutputTokens"] = params["max_new_tokens"]
+            if "temperature" in params:
+                generation_config["temperature"] = params["temperature"]
+        if "max_tokens" in kwargs:
+            generation_config["maxOutputTokens"] = kwargs.pop("max_tokens")
+        if "temperature" in kwargs:
+            generation_config["temperature"] = kwargs.pop("temperature")
+        payload: dict[str, Any] = {
+            "contents": [{"parts": [{"text": prompt}]}],
+        }
+        if generation_config:
+            payload["generationConfig"] = generation_config
+        url = f"{GEMINI_URL}?key={self._gemini_key}"
+        resp = self._gemini_client.post(url, json=payload)
+        if resp.status_code != 200:
+            raise GeminiApiError(resp.status_code, resp.text[:200])
+        result = resp.json()
+        candidates = result.get("candidates", [])
+        if not candidates:
+            raise GeminiApiError(0, "No candidates in Gemini response")
+        parts = candidates[0].get("content", {}).get("parts", [])
+        text = parts[0].get("text", "") if parts else ""
+        return text.strip()
+
     def _call_model(self, model: str, prompt: str, **kwargs: Any) -> dict[str, Any]:
         payload = {
             "model": model,
@@ -213,7 +260,14 @@ class HFClient:
         raise HFRateLimitError("Exhausted retries")
 
     def generate(self, prompt: str, **kwargs: Any) -> str:
-        # 1. Try GitHub Models first (free via GH_TOKEN, best code quality)
+        # Tier 1: Gemini 2.5 Flash (1M token window, 1500 RPD, free)
+        if self._gemini_client:
+            try:
+                return self._call_gemini(prompt, **kwargs)
+            except GeminiApiError as e:
+                print(f"  [gemini] failed: {e}")
+
+        # Tier 2: GitHub Models GPT-4o-mini (8K input limit, 150 RPD, free)
         if self._gh_client:
             for model in GITHUB_MODELS_MODELS:
                 try:
@@ -222,7 +276,7 @@ class HFClient:
                     print(f"  [gh-models] {model} failed: {e}")
                     continue
 
-        # 2. Try Groq (free, fast)
+        # Tier 3: Groq (131K context, ~1000 RPD, fast)
         if self._groq_client:
             for model in GROQ_FREE_MODELS:
                 try:
@@ -231,13 +285,11 @@ class HFClient:
                     print(f"  [groq] {model} failed: {e}")
                     continue
 
-        # 3. Dynamic discovery from HF Hub
+        # Tier 4: HF router (emergency fallback)
         models = self._discover_free_models()
         for m in FREE_MODELS:
             if m not in models:
                 models.append(m)
-
-        # 4. Try HF router (deprecated, credits depleted)
         errors: list[Exception] = []
         for model in models:
             try:

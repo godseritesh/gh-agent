@@ -295,6 +295,7 @@ def main() -> None:
         hf_token,
         groq_api_key=os.environ.get("GROQ_API_KEY"),
         gh_token=os.environ.get("GH_TOKEN"),
+        gemini_api_key=os.environ.get("GEMINI_API_KEY"),
     )
 
     repos_to_process = config.active_repos
