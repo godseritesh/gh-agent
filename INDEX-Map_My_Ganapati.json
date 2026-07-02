@@ -1,0 +1,453 @@
+{
+  "version": 1,
+  "repo": "Map_My_Ganapati",
+  "built_at": "2026-06-28T11:40:53.770955+00:00",
+  "commit": "0c2a6f208ff17b19a68007394fb7cdb48965e9b8",
+  "nodes": [
+    {
+      "id": "scripts/fetchGoogleData.ts:function:fetchAndUpdatePandalData",
+      "file": "scripts/fetchGoogleData.ts",
+      "type": "function",
+      "name": "fetchAndUpdatePandalData",
+      "signature": "async function fetchAndUpdatePandalData() {",
+      "line_start": 9,
+      "line_end": 126,
+      "docstring": "",
+      "body_preview": "async function fetchAndUpdatePandalData() {\n  console.log('\ud83d\udd0d Fetching real pandal data from Google Maps...')\n  \n  try {\n    // Check if Google Maps API key is available\n    if (!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) {\n      console.log('\u26a0\ufe0f  Google Maps API key not found.')\n      console.log('\ud83d\udca1 To use real-time Google Maps data:')\n      console.log('1. Get API key from https://console.cloud.google.com/')\n      console.log('2. Enable Places API and Google Maps JavaScript API')\n      console.log('3. Add NEXT_PUBLIC_GOOGLE_MAPS_API_KEY to your .env.local')\n      console.log('4. Run this script again')\n      return\n    }\n\n    // Search for famous Pune mandals on Google Maps\n    console.log('\ud83d\udccd Searching for famous Pune Ganapati mandals...')\n    const googleResults = await GooglePlacesService.searchFamousPuneMandals()\n    \n    if (googleResults.length === 0) {",
+      "imports": [
+        "../src/lib/googlePlacesService",
+        "../src/lib/supabase"
+      ],
+      "children": [],
+      "parents": []
+    },
+    {
+      "id": "scripts/fetchGoogleData.ts:function:getDescriptionForMandal",
+      "file": "scripts/fetchGoogleData.ts",
+      "type": "function",
+      "name": "getDescriptionForMandal",
+      "signature": "function getDescriptionForMandal(name: string): string {",
+      "line_start": 129,
+      "line_end": 144,
+      "docstring": "Helper functions to provide additional context for known mandals",
+      "body_preview": "function getDescriptionForMandal(name: string): string {\n  const descriptions: { [key: string]: string } = {\n    'Shri Kasba Ganpati': \"The first and most revered Ganapati mandal in Pune, established in 1893. Known as 'Gram Daivat' (presiding deity) of Pune city.\",\n    'Tambdi Jogeshwari Ganpati': \"Known as the protector of Pune, established in 1893. Associated with the Tambdi Jogeshwari Temple dedicated to Goddess Durga.\",\n    'Dagdusheth Halwai Ganpati Temple': \"One of the most famous Ganpati mandals in Pune, attracting thousands of devotees daily. Known for its rich history and grandeur.\",\n    'Tulshibaug Ganpati': \"Features one of the largest Ganpati idols in Pune. Established in 1901 with magnificent decorations.\",\n    'Guruji Talim Ganpati': \"Second oldest mandal in Pune, established in 1887. Symbol of Hindu-Muslim unity and communal harmony.\",\n    'Kesariwada Ganpati': \"Set up by Lokmanya Tilak as a symbol of unity and resistance. Historic significance in Indian independence movement.\"\n  }\n  \n  for (const [key, desc] of Object.entries(descriptions)) {\n    if (name.includes(key)) return desc\n  }\n  \n  return `Famous Ganapati mandal in Pune with rich cultural heritage.`\n}",
+      "imports": [
+        "../src/lib/googlePlacesService",
+        "../src/lib/supabase"
+      ],
+      "children": [],
+      "parents": []
+    },
+    {
+      "id": "scripts/fetchGoogleData.ts:function:getTimingsForMandal",
+      "file": "scripts/fetchGoogleData.ts",
+      "type": "function",
+      "name": "getTimingsForMandal",
+      "signature": "function getTimingsForMandal(name: string): string {",
+      "line_start": 146,
+      "line_end": 149,
+      "docstring": "",
+      "body_preview": "function getTimingsForMandal(name: string): string {\n  // Most mandals have similar timings during festival\n  return \"4:00 AM - 11:00 PM (Festival timings may vary)\"\n}",
+      "imports": [
+        "../src/lib/googlePlacesService",
+        "../src/lib/supabase"
+      ],
+      "children": [],
+      "parents": []
+    },
+    {
+      "id": "scripts/fetchGoogleData.ts:function:getFeaturesForMandal",
+      "file": "scripts/fetchGoogleData.ts",
+      "type": "function",
+      "name": "getFeaturesForMandal",
+      "signature": "function getFeaturesForMandal(name: string): string[] {",
+      "line_start": 151,
+      "line_end": 162,
+      "docstring": "",
+      "body_preview": "function getFeaturesForMandal(name: string): string[] {\n  const baseFeatures = [\"Google Maps Verified\", \"Historical Significance\"]\n  \n  if (name.includes('Kasba')) return [...baseFeatures, \"First Ganpati of Pune\", \"Panchamukhi Darshan\"]\n  if (name.includes('Dagdusheth')) return [...baseFeatures, \"Most Famous\", \"Gold Ornaments\", \"Live Telecast\"]\n  if (name.includes('Tulshibaug')) return [...baseFeatures, \"Large Idol\", \"Shopping Area Nearby\"]\n  if (name.includes('Tambdi')) return [...baseFeatures, \"Protector of Pune\", \"Traditional Aarti\"]\n  if (name.includes('Guruji')) return [...baseFeatures, \"Unity Symbol\", \"Wrestling Training\"]\n  if (name.includes('Kesariwada')) return [...baseFeatures, \"Freedom Fighter Legacy\", \"Tilak's Vision\"]\n  \n  return baseFeatures\n}",
+      "imports": [
+        "../src/lib/googlePlacesService",
+        "../src/lib/supabase"
+      ],
+      "children": [],
+      "parents": []
+    },
+    {
+      "id": "scripts/fetchGoogleData.ts:function:getContactForMandal",
+      "file": "scripts/fetchGoogleData.ts",
+      "type": "function",
+      "name": "getContactForMandal",
+      "signature": "function getContactForMandal(name: string): string | undefined {",
+      "line_start": 164,
+      "line_end": 167,
+      "docstring": "",
+      "body_preview": "function getContactForMandal(name: string): string | undefined {\n  // Return undefined to use Google's contact info if available\n  return undefined\n}",
+      "imports": [
+        "../src/lib/googlePlacesService",
+        "../src/lib/supabase"
+      ],
+      "children": [],
+      "parents": []
+    },
+    {
+      "id": "scripts/seedData.ts:function:seedDatabase",
+      "file": "scripts/seedData.ts",
+      "type": "function",
+      "name": "seedDatabase",
+      "signature": "async function seedDatabase() {",
+      "line_start": 9,
+      "line_end": 67,
+      "docstring": "",
+      "body_preview": "async function seedDatabase() {\n  try {\n    console.log('\ud83d\ude80 Starting database seeding...')\n    \n    // Check if table exists and is accessible\n    const { data: existingData, error: checkError } = await supabase\n      .from('pandals')\n      .select('id')\n      .limit(1)\n    \n    if (checkError) {\n      console.error('\u274c Cannot access pandals table:', checkError.message)\n      console.log('\ud83d\udccb Please run \"npm run setup-db\" first or create the table in Supabase dashboard')\n      return\n    }\n    \n    // Check if data already exists\n    const { data: existingPandals, error: countError } = await supabase\n      .from('pandals')\n      .select('id')",
+      "imports": [
+        "../src/lib/supabase",
+        "../src/lib/pandalService"
+      ],
+      "children": [],
+      "parents": []
+    },
+    {
+      "id": "scripts/setupDatabase.ts:function:setupDatabase",
+      "file": "scripts/setupDatabase.ts",
+      "type": "function",
+      "name": "setupDatabase",
+      "signature": "async function setupDatabase() {",
+      "line_start": 8,
+      "line_end": 67,
+      "docstring": "",
+      "body_preview": "async function setupDatabase() {\n  console.log('\ud83d\ude80 Setting up Supabase database...')\n  \n  try {\n    // Note: In production, you should run these SQL commands in Supabase dashboard\n    // This script assumes the table is already created\n    \n    // Check if pandals table exists by trying to query it\n    const { data, error } = await supabase\n      .from('pandals')\n      .select('count')\n      .limit(1)\n    \n    if (error) {\n      console.log('\ud83d\udccb Table does not exist. Please create it in Supabase dashboard with this SQL:')\n      console.log(`\nCREATE TABLE pandals (\n  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,\n  name TEXT NOT NULL,\n  description TEXT,",
+      "imports": [
+        "../src/lib/supabase"
+      ],
+      "children": [],
+      "parents": []
+    },
+    {
+      "id": "src/app/admin/page.tsx:function:AdminPage",
+      "file": "src/app/admin/page.tsx",
+      "type": "function",
+      "name": "AdminPage",
+      "signature": "export default function AdminPage() {",
+      "line_start": 22,
+      "line_end": 472,
+      "docstring": "",
+      "body_preview": "export default function AdminPage() {\n  const [isAuthenticated, setIsAuthenticated] = useState(false)\n  const [password, setPassword] = useState('')\n  const [showPassword, setShowPassword] = useState(false)\n  const [authError, setAuthError] = useState('')\n  const [currentLocation, setCurrentLocation] = useState<UserLocation | null>(null)\n  const [loading, setLoading] = useState(false)\n  const [successMessage, setSuccessMessage] = useState('')\n  const [recentPandals, setRecentPandals] = useState<any[]>([])\n  \n  const [formData, setFormData] = useState<PandalFormData>({\n    name: '',\n    description: '',\n    address: '',\n    latitude: 0,\n    longitude: 0,\n    contact: '',\n    timings: '',\n    specialFeatures: [],\n    rating: undefined",
+      "imports": [
+        "react",
+        "lucide-react",
+        "@/lib/pandalService",
+        "@/types/pandal",
+        "@/components/SimpleLocationButton",
+        "next/link"
+      ],
+      "children": [],
+      "parents": []
+    },
+    {
+      "id": "src/app/layout.tsx:function:RootLayout",
+      "file": "src/app/layout.tsx",
+      "type": "function",
+      "name": "RootLayout",
+      "signature": "export default function RootLayout({",
+      "line_start": 26,
+      "line_end": 40,
+      "docstring": "",
+      "body_preview": "export default function RootLayout({\n  children,\n}: {\n  children: React.ReactNode\n}) {\n  return (\n    <html lang=\"en\">\n      <body className={inter.className}>\n        <div className=\"min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-red-50\">\n          {children}\n        </div>\n      </body>\n    </html>\n  )\n}",
+      "imports": [
+        "next",
+        "next/font/google",
+        "./globals.css"
+      ],
+      "children": [],
+      "parents": []
+    },
+    {
+      "id": "src/app/page.tsx:function:HomePage",
+      "file": "src/app/page.tsx",
+      "type": "function",
+      "name": "HomePage",
+      "signature": "export default function HomePage() {",
+      "line_start": 26,
+      "line_end": 329,
+      "docstring": "",
+      "body_preview": "export default function HomePage() {\n  const [userLocation, setUserLocation] = useState<UserLocation | undefined>()\n  const [selectedPandal, setSelectedPandal] = useState<PandalLocation | null>(null)\n  const [pandalCount, setPandalCount] = useState<number>(0)\n  const [pandals, setPandals] = useState<PandalLocation[]>([])\n  const [showSuggestions, setShowSuggestions] = useState<boolean>(false)\n\n  const handleLocationUpdate = (location: UserLocation) => {\n    console.log('\ud83c\udfaf Page received location update:', location)\n    console.log('\ud83d\udccd Setting user location state...')\n    setUserLocation(location)\n    console.log('\u2705 User location state updated successfully')\n  }\n\n  const handlePandalSelect = (pandal: PandalLocation) => {\n    setSelectedPandal(pandal)\n    setShowSuggestions(false) // Close suggestions when selecting a pandal\n  }\n\n  const handlePandalCountUpdate = (count: number) => {",
+      "imports": [
+        "react",
+        "next/dynamic",
+        "@/types/pandal",
+        "@/components/Header",
+        "@/components/CrowdSummary",
+        "@/components/SuggestionPanel",
+        "@/lib/crowdService",
+        "lucide-react"
+      ],
+      "children": [],
+      "parents": []
+    },
+    {
+      "id": "src/components/CrowdSummary.tsx:function:CrowdSummary",
+      "file": "src/components/CrowdSummary.tsx",
+      "type": "function",
+      "name": "CrowdSummary",
+      "signature": "export default function CrowdSummary({ pandals }: CrowdSummaryProps) {",
+      "line_start": 11,
+      "line_end": 136,
+      "docstring": "",
+      "body_preview": "export default function CrowdSummary({ pandals }: CrowdSummaryProps) {\n  if (pandals.length === 0) return null\n\n  // Calculate summary statistics\n  const pandalsWithCrowd = pandals.filter(p => p.crowd_data)\n  const totalPeople = pandalsWithCrowd.reduce((sum, p) => sum + (p.crowd_data?.estimated_people_count || 0), 0)\n  const avgWaitTime = Math.round(pandalsWithCrowd.reduce((sum, p) => sum + (p.crowd_data?.darshan_wait_time || 0), 0) / pandalsWithCrowd.length)\n  \n  // Count by crowd level\n  const crowdStats = {\n    low: pandalsWithCrowd.filter(p => p.crowd_data?.current_crowd_level === 'low').length,\n    medium: pandalsWithCrowd.filter(p => p.crowd_data?.current_crowd_level === 'medium').length,\n    high: pandalsWithCrowd.filter(p => p.crowd_data?.current_crowd_level === 'high').length,\n    very_high: pandalsWithCrowd.filter(p => p.crowd_data?.current_crowd_level === 'very_high').length,\n  }\n\n  // Find best options (low crowd, short wait)\n  const bestOptions = pandalsWithCrowd\n    .filter(p => p.crowd_data?.current_crowd_level === 'low' || p.crowd_data?.current_crowd_level === 'medium')\n    .sort((a, b) => (a.crowd_data?.darshan_wait_time || 0) - (b.crowd_data?.darshan_wait_time || 0))",
+      "imports": [
+        "@/types/pandal",
+        "@/lib/crowdService",
+        "lucide-react"
+      ],
+      "children": [],
+      "parents": []
+    },
+    {
+      "id": "src/components/Header.tsx:function:Header",
+      "file": "src/components/Header.tsx",
+      "type": "function",
+      "name": "Header",
+      "signature": "export default function Header({ onLocationUpdate, userLocation }: HeaderProps) {",
+      "line_start": 14,
+      "line_end": 147,
+      "docstring": "",
+      "body_preview": "export default function Header({ onLocationUpdate, userLocation }: HeaderProps) {\n  const [isMenuOpen, setIsMenuOpen] = useState(false)\n\n  return (\n    <header \n      className=\"bg-gradient-to-r from-orange-600 via-red-500 to-pink-600 text-white shadow-2xl relative overflow-hidden\"\n      role=\"banner\"\n      aria-label=\"Main navigation\"\n    >\n      {/* Decorative background pattern */}\n      <div className=\"absolute inset-0 bg-black/10\" aria-hidden=\"true\"></div>\n      <div className=\"absolute inset-0 opacity-10\" aria-hidden=\"true\">\n        <div className=\"w-full h-full bg-repeat\" style={{\n          backgroundImage: `url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='white' fill-opacity='0.3'%3E%3Cpath d='M20 20c0 11-9 20-20 20s-20-9-20-20 9-20 20-20 20 9 20 20zm-2 0c0-9.9-8.1-18-18-18s-18 8.1-18 18 8.1 18 18 18 18-8.1 18-18z'/%3E%3C/g%3E%3C/svg%3E\")`\n        }}></div>\n      </div>\n      \n      <div className=\"relative container mx-auto px-3 sm:px-4 py-3 sm:py-4\">\n        <div className=\"flex items-center justify-between\">\n          {/* Logo and Title */}",
+      "imports": [
+        "react",
+        "@/types/pandal",
+        "./SimpleLocationButton",
+        "lucide-react",
+        "next/link"
+      ],
+      "children": [],
+      "parents": []
+    },
+    {
+      "id": "src/components/Map.tsx:function:ChangeView",
+      "file": "src/components/Map.tsx",
+      "type": "function",
+      "name": "ChangeView",
+      "signature": "function ChangeView({ center }: { center: [number, number] }) {",
+      "line_start": 27,
+      "line_end": 33,
+      "docstring": "Component to handle map center changes",
+      "body_preview": "function ChangeView({ center }: { center: [number, number] }) {\n  const map = useMap()\n  useEffect(() => {\n    map.setView(center, 13)\n  }, [map, center])\n  return null\n}",
+      "imports": [
+        "react",
+        "react-leaflet",
+        "leaflet",
+        "@/types/pandal",
+        "@/lib/pandalService",
+        "@/lib/crowdService",
+        "lucide-react"
+      ],
+      "children": [],
+      "parents": []
+    },
+    {
+      "id": "src/components/Map.tsx:function:Map",
+      "file": "src/components/Map.tsx",
+      "type": "function",
+      "name": "Map",
+      "signature": "export default function Map({ userLocation, onPandalSelect, onPandalCountUpdate, onPandalsUpdate }: MapProps) {",
+      "line_start": 35,
+      "line_end": 432,
+      "docstring": "",
+      "body_preview": "export default function Map({ userLocation, onPandalSelect, onPandalCountUpdate, onPandalsUpdate }: MapProps) {\n  const [pandals, setPandals] = useState<PandalLocation[]>([])\n  const [loading, setLoading] = useState(true)\n\n  // Default to Pune coordinates (centered on historic Peth areas)\n  const defaultCenter: [number, number] = [18.5204, 73.8567]\n  const mapCenter: [number, number] = userLocation \n    ? [userLocation.latitude, userLocation.longitude] \n    : defaultCenter\n\n  useEffect(() => {\n    const loadPandals = async () => {\n      setLoading(true)\n      try {\n        if (userLocation) {\n          console.log('\ud83d\uddfa\ufe0f Map component received user location, searching for nearby pandals...')\n          console.log('\ud83d\udccd User coordinates:', userLocation)\n          console.log('\ud83d\udcca Location details:', {\n            lat: userLocation.latitude,\n            lng: userLocation.longitude, ",
+      "imports": [
+        "react",
+        "react-leaflet",
+        "leaflet",
+        "@/types/pandal",
+        "@/lib/pandalService",
+        "@/lib/crowdService",
+        "lucide-react"
+      ],
+      "children": [],
+      "parents": []
+    },
+    {
+      "id": "src/components/SimpleLocationButton.tsx:function:SimpleLocationButton",
+      "file": "src/components/SimpleLocationButton.tsx",
+      "type": "function",
+      "name": "SimpleLocationButton",
+      "signature": "export default function SimpleLocationButton({ onLocationUpdate, disabled }: SimpleLocationButtonProps) {",
+      "line_start": 12,
+      "line_end": 231,
+      "docstring": "",
+      "body_preview": "export default function SimpleLocationButton({ onLocationUpdate, disabled }: SimpleLocationButtonProps) {\n  const [loading, setLoading] = useState(false)\n  const [error, setError] = useState<string>('')\n  const [success, setSuccess] = useState(false)\n\n  const getCurrentLocation = async () => {\n    console.log('\ud83d\udd0d Location button clicked')\n    setLoading(true)\n    setError('')\n    setSuccess(false)\n    \n    // Check if geolocation is supported\n    if (!navigator.geolocation) {\n      const errorMsg = 'Geolocation is not supported by this browser'\n      setError(errorMsg)\n      setLoading(false)\n      console.log('\u274c Geolocation not supported')\n      return\n    }\n",
+      "imports": [
+        "react",
+        "lucide-react",
+        "@/types/pandal"
+      ],
+      "children": [],
+      "parents": []
+    },
+    {
+      "id": "src/components/SuggestionPanel.tsx:function:SuggestionPanel",
+      "file": "src/components/SuggestionPanel.tsx",
+      "type": "function",
+      "name": "SuggestionPanel",
+      "signature": "export default function SuggestionPanel({ pandals, userLocation, onPandalSelect, onClose }: SuggestionPanelProps) {",
+      "line_start": 69,
+      "line_end": 554,
+      "docstring": "",
+      "body_preview": "export default function SuggestionPanel({ pandals, userLocation, onPandalSelect, onClose }: SuggestionPanelProps) {\n  const [selectedRoute, setSelectedRoute] = useState<SuggestionRoute | null>(null)\n  const [optimizedRoute, setOptimizedRoute] = useState<OptimizedRoute | null>(null)\n  const [showOptimizedView, setShowOptimizedView] = useState<boolean>(false)\n\n  const getRouteDistance = (routePandals: string[]) => {\n    if (!userLocation) return null\n    \n    const matchingPandals = pandals.filter(p => routePandals.includes(p.name))\n    if (matchingPandals.length === 0) return null\n    \n    // Calculate average distance\n    const totalDistance = matchingPandals.reduce((sum, pandal) => {\n      const distance = calculateDistance(\n        userLocation.latitude, userLocation.longitude,\n        pandal.latitude, pandal.longitude\n      )\n      return sum + distance\n    }, 0)\n    ",
+      "imports": [
+        "react",
+        "@/types/pandal",
+        "@/lib/routeOptimizer",
+        "lucide-react"
+      ],
+      "children": [],
+      "parents": []
+    },
+    {
+      "id": "src/lib/crowdService.ts:class:CrowdService",
+      "file": "src/lib/crowdService.ts",
+      "type": "class",
+      "name": "CrowdService",
+      "signature": "export class CrowdService {",
+      "line_start": 3,
+      "line_end": 230,
+      "docstring": "",
+      "body_preview": "export class CrowdService {\n  private static readonly FESTIVAL_START = new Date('2024-09-07') // Ganesh Chaturthi 2024\n  private static readonly FESTIVAL_END = new Date('2024-09-17')   // Anant Chaturdashi\n\n  /**\n   * Generate realistic crowd data for a pandal based on various factors\n   */\n  static generateCrowdData(pandal: PandalLocation): CrowdData {\n    const now = new Date()\n    const hour = now.getHours()\n    const dayOfWeek = now.getDay()\n    \n    // Base crowd level based on pandal popularity (from rating)\n    const popularityFactor = pandal.rating ? (pandal.rating - 3) / 2 : 0.5 // 0-1 scale\n    \n    // Time-based factors\n    const timeMultiplier = this.getTimeMultiplier(hour)\n    const dayMultiplier = this.getDayMultiplier(dayOfWeek)\n    const festivalMultiplier = this.getFestivalMultiplier(now)\n    ",
+      "imports": [
+        "@/types/pandal"
+      ],
+      "children": [],
+      "parents": []
+    },
+    {
+      "id": "src/lib/googlePlacesService.ts:class:GooglePlacesService",
+      "file": "src/lib/googlePlacesService.ts",
+      "type": "class",
+      "name": "GooglePlacesService",
+      "signature": "export class GooglePlacesService {",
+      "line_start": 30,
+      "line_end": 198,
+      "docstring": "",
+      "body_preview": "export class GooglePlacesService {\n  private static readonly API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY\n  private static readonly BASE_URL = 'https://maps.googleapis.com/maps/api/place'\n\n  /**\n   * Search for a place by name in Pune\n   */\n  static async searchPlace(placeName: string): Promise<GooglePlaceResult | null> {\n    if (!this.API_KEY) {\n      console.warn('Google Maps API key not found. Using fallback data.')\n      return null\n    }\n\n    try {\n      const query = `${placeName} Pune Maharashtra India`\n      const response = await fetch(\n        `${this.BASE_URL}/findplacefromtext/json?` +\n        `input=${encodeURIComponent(query)}&` +\n        `inputtype=textquery&` +\n        `fields=place_id,name,formatted_address,geometry,rating,user_ratings_total,opening_hours,photos,types&` +",
+      "imports": [],
+      "children": [],
+      "parents": []
+    },
+    {
+      "id": "src/lib/pandalService.ts:class:PandalService",
+      "file": "src/lib/pandalService.ts",
+      "type": "class",
+      "name": "PandalService",
+      "signature": "export class PandalService {",
+      "line_start": 5,
+      "line_end": 217,
+      "docstring": "",
+      "body_preview": "export class PandalService {\n  // Get all pandals\n  static async getAllPandals(): Promise<PandalLocation[]> {\n    try {\n      // Check if we have valid Supabase configuration\n      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL\n      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY\n      \n      if (!supabaseUrl || !supabaseKey || supabaseUrl === 'demo-mode' || supabaseKey === 'demo-mode') {\n        console.log('\ud83d\udcdd Using fallback data (no database configured)')\n        return this.getFallbackData()\n      }\n\n      const { data, error } = await supabase\n        .from('pandals')\n        .select('*')\n        .order('name')\n      \n      if (error) {\n        console.log('\ud83d\udcdd Database error, using fallback data:', error.message)",
+      "imports": [
+        "./supabase",
+        "@/types/pandal",
+        "./crowdService"
+      ],
+      "children": [],
+      "parents": []
+    },
+    {
+      "id": "src/lib/routeOptimizer.ts:class:RouteOptimizer",
+      "file": "src/lib/routeOptimizer.ts",
+      "type": "class",
+      "name": "RouteOptimizer",
+      "signature": "export class RouteOptimizer {",
+      "line_start": 10,
+      "line_end": 259,
+      "docstring": "",
+      "body_preview": "export class RouteOptimizer {\n  // Calculate distance between two points using Haversine formula\n  static calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {\n    const R = 6371 // Earth's radius in km\n    const dLat = this.deg2rad(lat2 - lat1)\n    const dLon = this.deg2rad(lon2 - lon1)\n    const a = \n      Math.sin(dLat/2) * Math.sin(dLat/2) +\n      Math.cos(this.deg2rad(lat1)) * Math.cos(this.deg2rad(lat2)) * \n      Math.sin(dLon/2) * Math.sin(dLon/2)\n    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))\n    return R * c\n  }\n\n  private static deg2rad(deg: number): number {\n    return deg * (Math.PI/180)\n  }\n\n  // Simplified nearest neighbor algorithm for route optimization\n  static optimizeRoute(pandals: PandalLocation[], userLocation?: UserLocation): OptimizedRoute {",
+      "imports": [
+        "@/types/pandal"
+      ],
+      "children": [],
+      "parents": []
+    }
+  ],
+  "edges": [],
+  "file_imports": {
+    "scripts/fetchGoogleData.ts": [
+      "../src/lib/googlePlacesService",
+      "../src/lib/supabase"
+    ],
+    "scripts/seedData.ts": [
+      "../src/lib/supabase",
+      "../src/lib/pandalService"
+    ],
+    "scripts/setupDatabase.ts": [
+      "../src/lib/supabase"
+    ],
+    "src/app/admin/page.tsx": [
+      "react",
+      "lucide-react",
+      "@/lib/pandalService",
+      "@/types/pandal",
+      "@/components/SimpleLocationButton",
+      "next/link"
+    ],
+    "src/app/layout.tsx": [
+      "next",
+      "next/font/google",
+      "./globals.css"
+    ],
+    "src/app/page.tsx": [
+      "react",
+      "next/dynamic",
+      "@/types/pandal",
+      "@/components/Header",
+      "@/components/CrowdSummary",
+      "@/components/SuggestionPanel",
+      "@/lib/crowdService",
+      "lucide-react"
+    ],
+    "src/components/CrowdSummary.tsx": [
+      "@/types/pandal",
+      "@/lib/crowdService",
+      "lucide-react"
+    ],
+    "src/components/Header.tsx": [
+      "react",
+      "@/types/pandal",
+      "./SimpleLocationButton",
+      "lucide-react",
+      "next/link"
+    ],
+    "src/components/Map.tsx": [
+      "react",
+      "react-leaflet",
+      "leaflet",
+      "@/types/pandal",
+      "@/lib/pandalService",
+      "@/lib/crowdService",
+      "lucide-react"
+    ],
+    "src/components/SimpleLocationButton.tsx": [
+      "react",
+      "lucide-react",
+      "@/types/pandal"
+    ],
+    "src/components/SuggestionPanel.tsx": [
+      "react",
+      "@/types/pandal",
+      "@/lib/routeOptimizer",
+      "lucide-react"
+    ],
+    "src/lib/crowdService.ts": [
+      "@/types/pandal"
+    ],
+    "src/lib/googlePlacesService.ts": [],
+    "src/lib/pandalService.ts": [
+      "./supabase",
+      "@/types/pandal",
+      "./crowdService"
+    ],
+    "src/lib/routeOptimizer.ts": [
+      "@/types/pandal"
+    ]
+  },
+  "total_files": 15
+}

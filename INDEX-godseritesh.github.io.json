@@ -1,0 +1,133 @@
+{
+  "version": 1,
+  "repo": "godseritesh.github.io",
+  "built_at": "2026-06-28T11:40:54.706686+00:00",
+  "commit": "aaea685d79c382fb237d72957db8ea85cacc829b",
+  "nodes": [
+    {
+      "id": "scripts/optimize-images.js:function:walk",
+      "file": "scripts/optimize-images.js",
+      "type": "function",
+      "name": "walk",
+      "signature": "function walk(dir, exts = ['.jpg', '.jpeg', '.png']) {",
+      "line_start": 6,
+      "line_end": 17,
+      "docstring": "Walk a directory and return image files",
+      "body_preview": "function walk(dir, exts = ['.jpg', '.jpeg', '.png']) {\n  const files = [];\n  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {\n    const full = path.join(dir, entry.name);\n    if (entry.isDirectory()) {\n      files.push(...walk(full, exts));\n    } else if (exts.includes(path.extname(entry.name).toLowerCase())) {\n      files.push(full);\n    }\n  }\n  return files;\n}",
+      "imports": [
+        "fs",
+        "path",
+        "sharp"
+      ],
+      "children": [],
+      "parents": []
+    },
+    {
+      "id": "scripts/optimize-images.js:function:processImage",
+      "file": "scripts/optimize-images.js",
+      "type": "function",
+      "name": "processImage",
+      "signature": "async function processImage(file) {",
+      "line_start": 19,
+      "line_end": 36,
+      "docstring": "",
+      "body_preview": "async function processImage(file) {\n  const dir = path.dirname(file);\n  const name = path.basename(file, path.extname(file));\n  const webpOut = path.join(dir, `${name}.webp`);\n  const avifOut = path.join(dir, `${name}.avif`);\n\n  try {\n    await sharp(file)\n      .resize({ width: 1600, withoutEnlargement: true })\n      .toFile(webpOut);\n    await sharp(file)\n      .resize({ width: 1600, withoutEnlargement: true })\n      .toFile(avifOut);\n    console.log(`Optimized: ${file} -> ${path.relative(process.cwd(), webpOut)}, ${path.relative(process.cwd(), avifOut)}`);\n  } catch (err) {\n    console.error('Failed to optimize', file, err);\n  }\n}",
+      "imports": [
+        "fs",
+        "path",
+        "sharp"
+      ],
+      "children": [],
+      "parents": []
+    },
+    {
+      "id": "scripts/optimize-images.js:function:main",
+      "file": "scripts/optimize-images.js",
+      "type": "function",
+      "name": "main",
+      "signature": "async function main() {",
+      "line_start": 38,
+      "line_end": 52,
+      "docstring": "",
+      "body_preview": "async function main() {\n  const targets = ['public', 'src/assets', 'src/images'];\n  const existing = targets.filter((t) => fs.existsSync(t));\n  if (!existing.length) {\n    console.log('No image folders found. Put images in `public/` or `src/assets/` to optimize.');\n    return;\n  }\n\n  for (const dir of existing) {\n    const imgs = walk(dir);\n    for (const img of imgs) {\n      await processImage(img);\n    }\n  }\n}",
+      "imports": [
+        "fs",
+        "path",
+        "sharp"
+      ],
+      "children": [],
+      "parents": []
+    },
+    {
+      "id": "src/App.tsx:function:App",
+      "file": "src/App.tsx",
+      "type": "function",
+      "name": "App",
+      "signature": "function App() {",
+      "line_start": 13,
+      "line_end": 33,
+      "docstring": "",
+      "body_preview": "function App() {\n  return (\n    <Router>\n      <div className=\"w-full min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white transition-colors\">\n        <MagicalCursor enabled={true} />\n        <Navbar />\n        <main>\n          <Routes>\n            <Route path=\"/\" element={<Home />} />\n            <Route path=\"/about\" element={<About />} />\n            <Route path=\"/projects\" element={<Projects />} />\n            <Route path=\"/journey\" element={<Journey />} />\n            <Route path=\"/certifications\" element={<Certifications />} />\n            <Route path=\"/contact\" element={<Contact />} />\n          </Routes>\n        </main>\n        <Footer />\n      </div>\n    </Router>\n  );",
+      "imports": [
+        "react-router-dom",
+        "./components/Navbar",
+        "./components/Footer",
+        "./components/MagicalCursor",
+        "./pages/Home",
+        "./pages/About",
+        "./pages/Projects",
+        "./pages/Contact",
+        "./pages/Journey",
+        "./pages/Certifications",
+        "./index.css"
+      ],
+      "children": [],
+      "parents": []
+    },
+    {
+      "id": "src/pages/Certifications.tsx:function:extractDriveId",
+      "file": "src/pages/Certifications.tsx",
+      "type": "function",
+      "name": "extractDriveId",
+      "signature": "function extractDriveId(link: string) {",
+      "line_start": 56,
+      "line_end": 59,
+      "docstring": "",
+      "body_preview": "function extractDriveId(link: string) {\n  const m = link.match(/\\/d\\/(.*?)\\//);\n  return m ? m[1] : null;\n}",
+      "imports": [
+        "react",
+        "../components/Animations",
+        "framer-motion"
+      ],
+      "children": [],
+      "parents": []
+    }
+  ],
+  "edges": [],
+  "file_imports": {
+    "scripts/optimize-images.js": [
+      "fs",
+      "path",
+      "sharp"
+    ],
+    "src/App.tsx": [
+      "react-router-dom",
+      "./components/Navbar",
+      "./components/Footer",
+      "./components/MagicalCursor",
+      "./pages/Home",
+      "./pages/About",
+      "./pages/Projects",
+      "./pages/Contact",
+      "./pages/Journey",
+      "./pages/Certifications",
+      "./index.css"
+    ],
+    "src/pages/Certifications.tsx": [
+      "react",
+      "../components/Animations",
+      "framer-motion"
+    ]
+  },
+  "total_files": 3
+}

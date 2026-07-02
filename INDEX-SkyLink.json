@@ -1,0 +1,1353 @@
+{
+  "version": 1,
+  "repo": "SkyLink",
+  "built_at": "2026-06-28T11:40:53.010704+00:00",
+  "commit": "09b56103abac0356319cb74462c4e647f3f744a5",
+  "nodes": [
+    {
+      "id": "src/main/java/com/skylink/Booking.java:class:Booking",
+      "file": "src/main/java/com/skylink/Booking.java",
+      "type": "class",
+      "name": "Booking",
+      "signature": "public class Booking {",
+      "line_start": 6,
+      "line_end": 38,
+      "docstring": "",
+      "body_preview": "public class Booking {\n    private final String bookingId;\n    private final String flightNumber;\n    private final String seatNumber;\n    private final String passengerName;\n    private final Date bookingDate;\n    private final boolean cancelled;\n\n    public Booking(String flightNumber, String seatNumber, String passengerName) {\n        this.bookingId = UUID.randomUUID().toString().substring(0, 8).toUpperCase();\n        this.flightNumber = flightNumber;\n        this.seatNumber = seatNumber;\n        this.passengerName = passengerName;\n        this.bookingDate = new Date();\n        this.cancelled = false;\n    }\n\n    public Booking(String bookingId, String flightNumber, String seatNumber, String passengerName, Date bookingDate, boolean cancelled) {\n        this.bookingId = bookingId;\n        this.flightNumber = flightNumber;",
+      "imports": [
+        "java.util.Date",
+        "java.util.UUID"
+      ],
+      "children": [
+        "Booking",
+        "Booking"
+      ],
+      "parents": [],
+      "package": "com.skylink"
+    },
+    {
+      "id": "src/main/java/com/skylink/Booking.java:method:Booking",
+      "file": "src/main/java/com/skylink/Booking.java",
+      "type": "method",
+      "name": "Booking",
+      "signature": "public Booking(String flightNumber, String seatNumber, String passengerName) {",
+      "parent": "Booking",
+      "line_start": 14,
+      "line_end": 21,
+      "docstring": "",
+      "body_preview": "    public Booking(String flightNumber, String seatNumber, String passengerName) {\n        this.bookingId = UUID.randomUUID().toString().substring(0, 8).toUpperCase();\n        this.flightNumber = flightNumber;\n        this.seatNumber = seatNumber;\n        this.passengerName = passengerName;\n        this.bookingDate = new Date();\n        this.cancelled = false;\n    }"
+    },
+    {
+      "id": "src/main/java/com/skylink/Booking.java:method:Booking",
+      "file": "src/main/java/com/skylink/Booking.java",
+      "type": "method",
+      "name": "Booking",
+      "signature": "public Booking(String bookingId, String flightNumber, String seatNumber, String passengerName, Date bookingDate, boolean cancelled) {",
+      "parent": "Booking",
+      "line_start": 23,
+      "line_end": 30,
+      "docstring": "",
+      "body_preview": "    public Booking(String bookingId, String flightNumber, String seatNumber, String passengerName, Date bookingDate, boolean cancelled) {\n        this.bookingId = bookingId;\n        this.flightNumber = flightNumber;\n        this.seatNumber = seatNumber;\n        this.passengerName = passengerName;\n        this.bookingDate = bookingDate;\n        this.cancelled = cancelled;\n    }"
+    },
+    {
+      "id": "src/main/java/com/skylink/BookingManager.java:class:BookingManager",
+      "file": "src/main/java/com/skylink/BookingManager.java",
+      "type": "class",
+      "name": "BookingManager",
+      "signature": "public class BookingManager {",
+      "line_start": 7,
+      "line_end": 105,
+      "docstring": "",
+      "body_preview": "public class BookingManager {\n    private final Map<String, Flight> flights = new ConcurrentHashMap<>();\n    private final Queue<BookingRequest> bookingQueue = new ConcurrentLinkedQueue<>();\n    private final Map<String, Booking> bookings = new ConcurrentHashMap<>();\n\n    public void addFlight(Flight flight) {\n        flights.put(flight.getFlightNumber(), flight);\n    }\n\n    public Flight searchFlight(String flightNumber) {\n        return flights.get(flightNumber);\n    }\n\n    public List<Flight> searchFlights(String origin, String destination) {\n        List<Flight> result = new ArrayList<>();\n        for (Flight flight : flights.values()) {\n            boolean originMatch = origin == null || origin.isEmpty() || flight.getOrigin().equalsIgnoreCase(origin);\n            boolean destMatch = destination == null || destination.isEmpty() || flight.getDestination().equalsIgnoreCase(destination);\n            if (originMatch && destMatch) {\n                result.add(flight);",
+      "imports": [
+        "java.util.*",
+        "java.util.concurrent.*",
+        "java.util.stream.Collectors"
+      ],
+      "children": [
+        "addFlight",
+        "searchFlight",
+        "searchFlights",
+        "getAllFlights",
+        "requestBooking",
+        "processBooking",
+        "cancelBooking",
+        "getBooking",
+        "getBookingsByPassenger",
+        "getBookingQueueSize"
+      ],
+      "parents": [],
+      "package": "com.skylink"
+    },
+    {
+      "id": "src/main/java/com/skylink/BookingManager.java:method:addFlight",
+      "file": "src/main/java/com/skylink/BookingManager.java",
+      "type": "method",
+      "name": "addFlight",
+      "signature": "public void addFlight(Flight flight) {",
+      "parent": "BookingManager",
+      "line_start": 12,
+      "line_end": 14,
+      "docstring": "",
+      "body_preview": "    public void addFlight(Flight flight) {\n        flights.put(flight.getFlightNumber(), flight);\n    }"
+    },
+    {
+      "id": "src/main/java/com/skylink/BookingManager.java:method:searchFlight",
+      "file": "src/main/java/com/skylink/BookingManager.java",
+      "type": "method",
+      "name": "searchFlight",
+      "signature": "public Flight searchFlight(String flightNumber) {",
+      "parent": "BookingManager",
+      "line_start": 16,
+      "line_end": 18,
+      "docstring": "",
+      "body_preview": "    public Flight searchFlight(String flightNumber) {\n        return flights.get(flightNumber);\n    }"
+    },
+    {
+      "id": "src/main/java/com/skylink/BookingManager.java:method:searchFlights",
+      "file": "src/main/java/com/skylink/BookingManager.java",
+      "type": "method",
+      "name": "searchFlights",
+      "signature": "public List<Flight> searchFlights(String origin, String destination) {",
+      "parent": "BookingManager",
+      "line_start": 20,
+      "line_end": 32,
+      "docstring": "",
+      "body_preview": "    public List<Flight> searchFlights(String origin, String destination) {\n        List<Flight> result = new ArrayList<>();\n        for (Flight flight : flights.values()) {\n            boolean originMatch = origin == null || origin.isEmpty() || flight.getOrigin().equalsIgnoreCase(origin);\n            boolean destMatch = destination == null || destination.isEmpty() || flight.getDestination().equalsIgnoreCase(destination);\n            if (originMatch && destMatch) {\n                result.add(flight);\n            }\n        }\n        return result.stream()\n                .sorted(Comparator.comparing(Flight::getDepartureTime))\n                .collect(Collectors.toList());\n    }"
+    },
+    {
+      "id": "src/main/java/com/skylink/BookingManager.java:method:getAllFlights",
+      "file": "src/main/java/com/skylink/BookingManager.java",
+      "type": "method",
+      "name": "getAllFlights",
+      "signature": "public List<Flight> getAllFlights() {",
+      "parent": "BookingManager",
+      "line_start": 34,
+      "line_end": 38,
+      "docstring": "",
+      "body_preview": "    public List<Flight> getAllFlights() {\n        return flights.values().stream()\n                .sorted(Comparator.comparing(Flight::getDepartureTime))\n                .collect(Collectors.toList());\n    }"
+    },
+    {
+      "id": "src/main/java/com/skylink/BookingManager.java:method:requestBooking",
+      "file": "src/main/java/com/skylink/BookingManager.java",
+      "type": "method",
+      "name": "requestBooking",
+      "signature": "public BookingResult requestBooking(String flightNumber, String seatNumber, String passengerName) {",
+      "parent": "BookingManager",
+      "line_start": 40,
+      "line_end": 44,
+      "docstring": "",
+      "body_preview": "    public BookingResult requestBooking(String flightNumber, String seatNumber, String passengerName) {\n        BookingRequest request = new BookingRequest(flightNumber, seatNumber, passengerName);\n        bookingQueue.add(request);\n        return processBooking(request);\n    }"
+    },
+    {
+      "id": "src/main/java/com/skylink/BookingManager.java:method:processBooking",
+      "file": "src/main/java/com/skylink/BookingManager.java",
+      "type": "method",
+      "name": "processBooking",
+      "signature": "private BookingResult processBooking(BookingRequest request) {",
+      "parent": "BookingManager",
+      "line_start": 46,
+      "line_end": 64,
+      "docstring": "",
+      "body_preview": "    private BookingResult processBooking(BookingRequest request) {\n        Flight flight = flights.get(request.flightNumber());\n        if (flight == null) {\n            return new BookingResult(false, \"Flight not found\", null);\n        }\n        Seat seat = flight.getSeat(request.seatNumber());\n        if (seat == null) {\n            return new BookingResult(false, \"Seat not found\", null);\n        }\n        synchronized (seat) {\n            if (seat.book(request.passengerName())) {\n                Booking booking = new Booking(flight.getFlightNumber(), seat.getSeatNumber(), request.passengerName());\n                bookings.put(booking.getBookingId(), booking);\n                return new BookingResult(true, \"Booking successful\", booking);\n            } else {\n                return new BookingResult(false, \"Seat already booked\", null);\n            }\n        }\n    }"
+    },
+    {
+      "id": "src/main/java/com/skylink/BookingManager.java:method:cancelBooking",
+      "file": "src/main/java/com/skylink/BookingManager.java",
+      "type": "method",
+      "name": "cancelBooking",
+      "signature": "public boolean cancelBooking(String bookingId) {",
+      "parent": "BookingManager",
+      "line_start": 66,
+      "line_end": 86,
+      "docstring": "",
+      "body_preview": "    public boolean cancelBooking(String bookingId) {\n        Booking booking = bookings.get(bookingId);\n        if (booking == null || booking.isCancelled()) {\n            return false;\n        }\n        Flight flight = flights.get(booking.getFlightNumber());\n        if (flight == null) {\n            return false;\n        }\n        Seat seat = flight.getSeat(booking.getSeatNumber());\n        if (seat == null) {\n            return false;\n        }\n        synchronized (seat) {\n            if (seat.cancel()) {\n                bookings.remove(bookingId);\n                return true;\n            }\n        }\n        return false;"
+    },
+    {
+      "id": "src/main/java/com/skylink/BookingManager.java:method:getBooking",
+      "file": "src/main/java/com/skylink/BookingManager.java",
+      "type": "method",
+      "name": "getBooking",
+      "signature": "public Booking getBooking(String bookingId) {",
+      "parent": "BookingManager",
+      "line_start": 88,
+      "line_end": 90,
+      "docstring": "",
+      "body_preview": "    public Booking getBooking(String bookingId) {\n        return bookings.get(bookingId);\n    }"
+    },
+    {
+      "id": "src/main/java/com/skylink/BookingManager.java:method:getBookingsByPassenger",
+      "file": "src/main/java/com/skylink/BookingManager.java",
+      "type": "method",
+      "name": "getBookingsByPassenger",
+      "signature": "public List<Booking> getBookingsByPassenger(String passengerName) {",
+      "parent": "BookingManager",
+      "line_start": 92,
+      "line_end": 97,
+      "docstring": "",
+      "body_preview": "    public List<Booking> getBookingsByPassenger(String passengerName) {\n        return bookings.values().stream()\n                .filter(b -> b.getPassengerName().equalsIgnoreCase(passengerName))\n                .sorted(Comparator.comparing(Booking::getBookingDate).reversed())\n                .collect(Collectors.toList());\n    }"
+    },
+    {
+      "id": "src/main/java/com/skylink/BookingManager.java:method:getBookingQueueSize",
+      "file": "src/main/java/com/skylink/BookingManager.java",
+      "type": "method",
+      "name": "getBookingQueueSize",
+      "signature": "public int getBookingQueueSize() {",
+      "parent": "BookingManager",
+      "line_start": 99,
+      "line_end": 101,
+      "docstring": "",
+      "body_preview": "    public int getBookingQueueSize() {\n        return bookingQueue.size();\n    }"
+    },
+    {
+      "id": "src/main/java/com/skylink/Flight.java:class:Flight",
+      "file": "src/main/java/com/skylink/Flight.java",
+      "type": "class",
+      "name": "Flight",
+      "signature": "public class Flight {",
+      "line_start": 6,
+      "line_end": 118,
+      "docstring": "",
+      "body_preview": "public class Flight {\n    private final String flightNumber;\n    private final String origin;\n    private final String destination;\n    private final Date departureTime;\n    private final Map<String, Seat> seats;\n\n    public Flight(String flightNumber, String origin, String destination, Date departureTime, int seatCount) {\n        this.flightNumber = flightNumber;\n        this.origin = origin;\n        this.destination = destination;\n        this.departureTime = departureTime;\n        this.seats = new ConcurrentHashMap<>();\n        \n        int businessRows = 3;\n        int economyPlusRows = 6;\n        int economyRows = (seatCount - (businessRows * 6) - (economyPlusRows * 9)) / 9;\n        \n        int rowNum = 1;\n        ",
+      "imports": [
+        "java.util.*",
+        "java.util.concurrent.*"
+      ],
+      "children": [
+        "Flight",
+        "getSeat",
+        "getAvailableSeats",
+        "getAvailableSeatCount",
+        "getTotalSeatCount",
+        "getSeatPrice"
+      ],
+      "parents": [],
+      "package": "com.skylink"
+    },
+    {
+      "id": "src/main/java/com/skylink/Flight.java:method:Flight",
+      "file": "src/main/java/com/skylink/Flight.java",
+      "type": "method",
+      "name": "Flight",
+      "signature": "public Flight(String flightNumber, String origin, String destination, Date departureTime, int seatCount) {",
+      "parent": "Flight",
+      "line_start": 13,
+      "line_end": 51,
+      "docstring": "",
+      "body_preview": "    public Flight(String flightNumber, String origin, String destination, Date departureTime, int seatCount) {\n        this.flightNumber = flightNumber;\n        this.origin = origin;\n        this.destination = destination;\n        this.departureTime = departureTime;\n        this.seats = new ConcurrentHashMap<>();\n        \n        int businessRows = 3;\n        int economyPlusRows = 6;\n        int economyRows = (seatCount - (businessRows * 6) - (economyPlusRows * 9)) / 9;\n        \n        int rowNum = 1;\n        \n        char[] businessSeats = {'A', 'B', 'C', 'D', 'E', 'F'};\n        for (int r = 0; r < businessRows; r++) {\n            for (char letter : businessSeats) {\n                String seatNum = String.format(\"%02d%c\", rowNum, letter);\n                seats.put(seatNum, new Seat(seatNum));\n            }\n            rowNum++;"
+    },
+    {
+      "id": "src/main/java/com/skylink/Flight.java:method:getSeat",
+      "file": "src/main/java/com/skylink/Flight.java",
+      "type": "method",
+      "name": "getSeat",
+      "signature": "public Seat getSeat(String seatNumber) {",
+      "parent": "Flight",
+      "line_start": 59,
+      "line_end": 61,
+      "docstring": "",
+      "body_preview": "    public Seat getSeat(String seatNumber) {\n        return seats.get(seatNumber);\n    }"
+    },
+    {
+      "id": "src/main/java/com/skylink/Flight.java:method:getAvailableSeats",
+      "file": "src/main/java/com/skylink/Flight.java",
+      "type": "method",
+      "name": "getAvailableSeats",
+      "signature": "public List<Seat> getAvailableSeats() {",
+      "parent": "Flight",
+      "line_start": 63,
+      "line_end": 71,
+      "docstring": "",
+      "body_preview": "    public List<Seat> getAvailableSeats() {\n        List<Seat> available = new ArrayList<>();\n        for (Seat seat : seats.values()) {\n            if (!seat.isBooked()) {\n                available.add(seat);\n            }\n        }\n        return available;\n    }"
+    },
+    {
+      "id": "src/main/java/com/skylink/Flight.java:method:getAvailableSeatCount",
+      "file": "src/main/java/com/skylink/Flight.java",
+      "type": "method",
+      "name": "getAvailableSeatCount",
+      "signature": "public int getAvailableSeatCount() {",
+      "parent": "Flight",
+      "line_start": 73,
+      "line_end": 75,
+      "docstring": "",
+      "body_preview": "    public int getAvailableSeatCount() {\n        return getAvailableSeats().size();\n    }"
+    },
+    {
+      "id": "src/main/java/com/skylink/Flight.java:method:getTotalSeatCount",
+      "file": "src/main/java/com/skylink/Flight.java",
+      "type": "method",
+      "name": "getTotalSeatCount",
+      "signature": "public int getTotalSeatCount() {",
+      "parent": "Flight",
+      "line_start": 77,
+      "line_end": 79,
+      "docstring": "",
+      "body_preview": "    public int getTotalSeatCount() {\n        return seats.size();\n    }"
+    },
+    {
+      "id": "src/main/java/com/skylink/Flight.java:method:getSeatPrice",
+      "file": "src/main/java/com/skylink/Flight.java",
+      "type": "method",
+      "name": "getSeatPrice",
+      "signature": "public double getSeatPrice(String seatNumber) {",
+      "parent": "Flight",
+      "line_start": 81,
+      "line_end": 117,
+      "docstring": "",
+      "body_preview": "    public double getSeatPrice(String seatNumber) {\n        Seat seat = seats.get(seatNumber);\n        if (seat == null) return 0.0;\n        \n        int row = Integer.parseInt(seatNumber.substring(0, 2));\n        char letter = seatNumber.charAt(2);\n        \n        double basePrice = 4500.0;\n        \n        if (row >= 1 && row <= 3) {\n            basePrice = 22000.0;\n            if (letter == 'A' || letter == 'F') {\n                basePrice += 1500.0;\n            }\n        } else if (row >= 4 && row <= 9) {\n            basePrice = 9500.0;\n            if (letter == 'A' || letter == 'J') {\n                basePrice += 800.0;\n            }\n        } else {"
+    },
+    {
+      "id": "src/main/java/com/skylink/FlightDTO.java:class:FlightDTO",
+      "file": "src/main/java/com/skylink/FlightDTO.java",
+      "type": "class",
+      "name": "FlightDTO",
+      "signature": "public class FlightDTO {",
+      "line_start": 7,
+      "line_end": 38,
+      "docstring": "",
+      "body_preview": "public class FlightDTO {\n    private String flightNumber;\n    private String origin;\n    private String destination;\n    private Date departureTime;\n    private Map<String, SeatDTO> seats;\n    private int availableSeatCount;\n    private int totalSeatCount;\n\n    public FlightDTO(Flight flight) {\n        this.flightNumber = flight.getFlightNumber();\n        this.origin = flight.getOrigin();\n        this.destination = flight.getDestination();\n        this.departureTime = flight.getDepartureTime();\n        this.availableSeatCount = flight.getAvailableSeatCount();\n        this.totalSeatCount = flight.getTotalSeatCount();\n        \n        this.seats = new HashMap<>();\n        for (Map.Entry<String, Seat> entry : flight.getSeats().entrySet()) {\n            double price = flight.getSeatPrice(entry.getKey());",
+      "imports": [
+        "java.util.Date",
+        "java.util.HashMap",
+        "java.util.Map"
+      ],
+      "children": [
+        "FlightDTO"
+      ],
+      "parents": [],
+      "package": "com.skylink"
+    },
+    {
+      "id": "src/main/java/com/skylink/FlightDTO.java:method:FlightDTO",
+      "file": "src/main/java/com/skylink/FlightDTO.java",
+      "type": "method",
+      "name": "FlightDTO",
+      "signature": "public FlightDTO(Flight flight) {",
+      "parent": "FlightDTO",
+      "line_start": 16,
+      "line_end": 29,
+      "docstring": "",
+      "body_preview": "    public FlightDTO(Flight flight) {\n        this.flightNumber = flight.getFlightNumber();\n        this.origin = flight.getOrigin();\n        this.destination = flight.getDestination();\n        this.departureTime = flight.getDepartureTime();\n        this.availableSeatCount = flight.getAvailableSeatCount();\n        this.totalSeatCount = flight.getTotalSeatCount();\n        \n        this.seats = new HashMap<>();\n        for (Map.Entry<String, Seat> entry : flight.getSeats().entrySet()) {\n            double price = flight.getSeatPrice(entry.getKey());\n            seats.put(entry.getKey(), new SeatDTO(entry.getValue(), price));\n        }\n    }"
+    },
+    {
+      "id": "src/main/java/com/skylink/Seat.java:class:Seat",
+      "file": "src/main/java/com/skylink/Seat.java",
+      "type": "class",
+      "name": "Seat",
+      "signature": "public class Seat {",
+      "line_start": 6,
+      "line_end": 44,
+      "docstring": "",
+      "body_preview": "public class Seat {\n    private final String seatNumber;\n    private final AtomicBoolean booked;\n    private final AtomicReference<String> passengerName;\n\n    public Seat(String seatNumber) {\n        this.seatNumber = seatNumber;\n        this.booked = new AtomicBoolean(false);\n        this.passengerName = new AtomicReference<>(null);\n    }\n\n    public String getSeatNumber() {\n        return seatNumber;\n    }\n\n    public boolean isBooked() {\n        return booked.get();\n    }\n\n    public String getPassengerName() {",
+      "imports": [
+        "java.util.concurrent.atomic.AtomicBoolean",
+        "java.util.concurrent.atomic.AtomicReference"
+      ],
+      "children": [
+        "Seat",
+        "getSeatNumber",
+        "isBooked",
+        "getPassengerName",
+        "book",
+        "cancel"
+      ],
+      "parents": [],
+      "package": "com.skylink"
+    },
+    {
+      "id": "src/main/java/com/skylink/Seat.java:method:Seat",
+      "file": "src/main/java/com/skylink/Seat.java",
+      "type": "method",
+      "name": "Seat",
+      "signature": "public Seat(String seatNumber) {",
+      "parent": "Seat",
+      "line_start": 11,
+      "line_end": 15,
+      "docstring": "",
+      "body_preview": "    public Seat(String seatNumber) {\n        this.seatNumber = seatNumber;\n        this.booked = new AtomicBoolean(false);\n        this.passengerName = new AtomicReference<>(null);\n    }"
+    },
+    {
+      "id": "src/main/java/com/skylink/Seat.java:method:getSeatNumber",
+      "file": "src/main/java/com/skylink/Seat.java",
+      "type": "method",
+      "name": "getSeatNumber",
+      "signature": "public String getSeatNumber() {",
+      "parent": "Seat",
+      "line_start": 17,
+      "line_end": 19,
+      "docstring": "",
+      "body_preview": "    public String getSeatNumber() {\n        return seatNumber;\n    }"
+    },
+    {
+      "id": "src/main/java/com/skylink/Seat.java:method:isBooked",
+      "file": "src/main/java/com/skylink/Seat.java",
+      "type": "method",
+      "name": "isBooked",
+      "signature": "public boolean isBooked() {",
+      "parent": "Seat",
+      "line_start": 21,
+      "line_end": 23,
+      "docstring": "",
+      "body_preview": "    public boolean isBooked() {\n        return booked.get();\n    }"
+    },
+    {
+      "id": "src/main/java/com/skylink/Seat.java:method:getPassengerName",
+      "file": "src/main/java/com/skylink/Seat.java",
+      "type": "method",
+      "name": "getPassengerName",
+      "signature": "public String getPassengerName() {",
+      "parent": "Seat",
+      "line_start": 25,
+      "line_end": 27,
+      "docstring": "",
+      "body_preview": "    public String getPassengerName() {\n        return passengerName.get();\n    }"
+    },
+    {
+      "id": "src/main/java/com/skylink/Seat.java:method:book",
+      "file": "src/main/java/com/skylink/Seat.java",
+      "type": "method",
+      "name": "book",
+      "signature": "public boolean book(String passenger) {",
+      "parent": "Seat",
+      "line_start": 29,
+      "line_end": 35,
+      "docstring": "",
+      "body_preview": "    public boolean book(String passenger) {\n        if (booked.compareAndSet(false, true)) {\n            passengerName.set(passenger);\n            return true;\n        }\n        return false;\n    }"
+    },
+    {
+      "id": "src/main/java/com/skylink/Seat.java:method:cancel",
+      "file": "src/main/java/com/skylink/Seat.java",
+      "type": "method",
+      "name": "cancel",
+      "signature": "public boolean cancel() {",
+      "parent": "Seat",
+      "line_start": 37,
+      "line_end": 43,
+      "docstring": "",
+      "body_preview": "    public boolean cancel() {\n        if (booked.compareAndSet(true, false)) {\n            passengerName.set(null);\n            return true;\n        }\n        return false;\n    }"
+    },
+    {
+      "id": "src/main/java/com/skylink/SeatDTO.java:class:SeatDTO",
+      "file": "src/main/java/com/skylink/SeatDTO.java",
+      "type": "class",
+      "name": "SeatDTO",
+      "signature": "public class SeatDTO {",
+      "line_start": 3,
+      "line_end": 20,
+      "docstring": "",
+      "body_preview": "public class SeatDTO {\n    private String seatNumber;\n    private boolean booked;\n    private String passengerName;\n    private double price;\n\n    public SeatDTO(Seat seat, double price) {\n        this.seatNumber = seat.getSeatNumber();\n        this.booked = seat.isBooked();\n        this.passengerName = seat.getPassengerName();\n        this.price = price;\n    }\n\n    public String getSeatNumber() { return seatNumber; }\n    public boolean isBooked() { return booked; }\n    public String getPassengerName() { return passengerName; }\n    public double getPrice() { return price; }\n}",
+      "imports": [],
+      "children": [
+        "SeatDTO"
+      ],
+      "parents": [],
+      "package": "com.skylink"
+    },
+    {
+      "id": "src/main/java/com/skylink/SeatDTO.java:method:SeatDTO",
+      "file": "src/main/java/com/skylink/SeatDTO.java",
+      "type": "method",
+      "name": "SeatDTO",
+      "signature": "public SeatDTO(Seat seat, double price) {",
+      "parent": "SeatDTO",
+      "line_start": 9,
+      "line_end": 14,
+      "docstring": "",
+      "body_preview": "    public SeatDTO(Seat seat, double price) {\n        this.seatNumber = seat.getSeatNumber();\n        this.booked = seat.isBooked();\n        this.passengerName = seat.getPassengerName();\n        this.price = price;\n    }"
+    },
+    {
+      "id": "src/main/java/com/skylink/SkyLinkApp.java:class:SkyLinkApp",
+      "file": "src/main/java/com/skylink/SkyLinkApp.java",
+      "type": "class",
+      "name": "SkyLinkApp",
+      "signature": "public class SkyLinkApp {",
+      "line_start": 6,
+      "line_end": 38,
+      "docstring": "",
+      "body_preview": "public class SkyLinkApp {\n    public static void main(String[] args) throws InterruptedException {\n        BookingManager manager = new BookingManager();\n        Flight flight = new Flight(\"SKY123\", \"NYC\", \"LAX\", new Date(), 100);\n        manager.addFlight(flight);\n\n        int parallelBookings = 120;\n        ExecutorService executor = Executors.newFixedThreadPool(20);\n        List<Future<BookingManager.BookingResult>> results = new ArrayList<>();\n\n        for (int i = 1; i <= parallelBookings; i++) {\n            final String seatNum = String.format(\"%03d\", (i % 100) + 1);\n            final String passenger = \"Passenger-\" + i;\n            results.add(executor.submit(() -> manager.requestBooking(\"SKY123\", seatNum, passenger)));\n        }\n\n        int success = 0, fail = 0;\n        for (Future<BookingManager.BookingResult> result : results) {\n            try {\n                if (result.get().success()) success++;",
+      "imports": [
+        "java.util.*",
+        "java.util.concurrent.*"
+      ],
+      "children": [
+        "main"
+      ],
+      "parents": [],
+      "package": "com.skylink"
+    },
+    {
+      "id": "src/main/java/com/skylink/SkyLinkApp.java:method:main",
+      "file": "src/main/java/com/skylink/SkyLinkApp.java",
+      "type": "method",
+      "name": "main",
+      "signature": "public static void main(String[] args) throws InterruptedException {",
+      "parent": "SkyLinkApp",
+      "line_start": 7,
+      "line_end": 37,
+      "docstring": "",
+      "body_preview": "    public static void main(String[] args) throws InterruptedException {\n        BookingManager manager = new BookingManager();\n        Flight flight = new Flight(\"SKY123\", \"NYC\", \"LAX\", new Date(), 100);\n        manager.addFlight(flight);\n\n        int parallelBookings = 120;\n        ExecutorService executor = Executors.newFixedThreadPool(20);\n        List<Future<BookingManager.BookingResult>> results = new ArrayList<>();\n\n        for (int i = 1; i <= parallelBookings; i++) {\n            final String seatNum = String.format(\"%03d\", (i % 100) + 1);\n            final String passenger = \"Passenger-\" + i;\n            results.add(executor.submit(() -> manager.requestBooking(\"SKY123\", seatNum, passenger)));\n        }\n\n        int success = 0, fail = 0;\n        for (Future<BookingManager.BookingResult> result : results) {\n            try {\n                if (result.get().success()) success++;\n                else fail++;"
+    },
+    {
+      "id": "src/main/java/com/skylink/SkyLinkServer.java:class:SkyLinkServer",
+      "file": "src/main/java/com/skylink/SkyLinkServer.java",
+      "type": "class",
+      "name": "SkyLinkServer",
+      "signature": "public class SkyLinkServer {",
+      "line_start": 8,
+      "line_end": 229,
+      "docstring": "",
+      "body_preview": "public class SkyLinkServer {\n    private static final BookingManager manager = new BookingManager();\n    private static final Gson gson = new GsonBuilder()\n            .setDateFormat(\"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'\")\n            .create();\n\n    public static void main(String[] args) {\n        initializeFlights();\n\n        String port = System.getenv(\"PORT\");\n        if (port != null) {\n            port(Integer.parseInt(port));\n        } else {\n            port(4567);\n        }\n        staticFiles.location(\"/public\");\n\n        before((request, response) -> {\n            response.header(\"Access-Control-Allow-Origin\", \"*\");\n            response.header(\"Access-Control-Allow-Methods\", \"GET, POST, PUT, DELETE, OPTIONS\");",
+      "imports": [
+        "spark.Spark.*",
+        "com.google.gson.Gson",
+        "com.google.gson.GsonBuilder",
+        "java.util.*"
+      ],
+      "children": [
+        "main",
+        "initializeFlights",
+        "createDummyBookings"
+      ],
+      "parents": [],
+      "package": "com.skylink"
+    },
+    {
+      "id": "src/main/java/com/skylink/SkyLinkServer.java:method:main",
+      "file": "src/main/java/com/skylink/SkyLinkServer.java",
+      "type": "method",
+      "name": "main",
+      "signature": "public static void main(String[] args) {",
+      "parent": "SkyLinkServer",
+      "line_start": 14,
+      "line_end": 151,
+      "docstring": "",
+      "body_preview": "    public static void main(String[] args) {\n        initializeFlights();\n\n        String port = System.getenv(\"PORT\");\n        if (port != null) {\n            port(Integer.parseInt(port));\n        } else {\n            port(4567);\n        }\n        staticFiles.location(\"/public\");\n\n        before((request, response) -> {\n            response.header(\"Access-Control-Allow-Origin\", \"*\");\n            response.header(\"Access-Control-Allow-Methods\", \"GET, POST, PUT, DELETE, OPTIONS\");\n            response.header(\"Access-Control-Allow-Headers\", \"Content-Type, Authorization\");\n        });\n\n        options(\"/*\", (request, response) -> \"OK\");\n\n        get(\"/api/flights\", (req, res) -> {"
+    },
+    {
+      "id": "src/main/java/com/skylink/SkyLinkServer.java:method:initializeFlights",
+      "file": "src/main/java/com/skylink/SkyLinkServer.java",
+      "type": "method",
+      "name": "initializeFlights",
+      "signature": "private static void initializeFlights() {",
+      "parent": "SkyLinkServer",
+      "line_start": 153,
+      "line_end": 191,
+      "docstring": "",
+      "body_preview": "    private static void initializeFlights() {\n        String[] popularRoutes = {\n            \"DEL-MUM\", \"MUM-DEL\", \"DEL-BLR\", \"BLR-DEL\",\n            \"DEL-HYD\", \"HYD-DEL\", \"MUM-BLR\", \"BLR-MUM\",\n            \"DEL-CCU\", \"CCU-DEL\", \"MUM-HYD\", \"HYD-MUM\",\n            \"DEL-JAI\", \"JAI-DEL\", \"BLR-CCU\", \"CCU-BLR\"\n        };\n        Random rand = new Random();\n        Calendar cal = Calendar.getInstance();\n        int flightCounter = 100;\n        \n        for (int month = 0; month < 3; month++) {\n            for (int week = 0; week < 4; week++) {\n                for (int dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {\n                    int dayOffset = month * 30 + week * 7 + dayOfWeek;\n                    \n                    for (int hour = 6; hour < 22; hour += 3) {\n                        String route = popularRoutes[rand.nextInt(popularRoutes.length)];\n                        String[] parts = route.split(\"-\");\n                        String from = parts[0];"
+    },
+    {
+      "id": "src/main/java/com/skylink/SkyLinkServer.java:method:createDummyBookings",
+      "file": "src/main/java/com/skylink/SkyLinkServer.java",
+      "type": "method",
+      "name": "createDummyBookings",
+      "signature": "private static void createDummyBookings(Random rand) {",
+      "parent": "SkyLinkServer",
+      "line_start": 193,
+      "line_end": 228,
+      "docstring": "",
+      "body_preview": "    private static void createDummyBookings(Random rand) {\n        String[] dummyNames = {\n            \"Rajesh Kumar\", \"Priya Sharma\", \"Amit Patel\", \"Anjali Singh\",\n            \"Rahul Verma\", \"Kavita Reddy\", \"Vikram Mehta\", \"Swati Desai\",\n            \"Arjun Iyer\", \"Neha Gupta\", \"Suresh Nair\", \"Deepika Joshi\",\n            \"Ravi Malhotra\", \"Sunita Rao\", \"Mohan Kapoor\", \"Pooja Agarwal\",\n            \"Kiran Shah\", \"Nikhil Trivedi\", \"Divya Bhatia\", \"Ashish Dubey\"\n        };\n        \n        List<Flight> allFlights = manager.getAllFlights();\n        int totalFlights = allFlights.size();\n        \n        for (int i = 0; i < totalFlights; i++) {\n            Flight flight = allFlights.get(i);\n            int bookingsToCreate;\n            \n            if (i < totalFlights * 0.1) {\n                bookingsToCreate = 252;\n            } else if (i < totalFlights * 0.3) {\n                bookingsToCreate = 200 + rand.nextInt(52);"
+    },
+    {
+      "id": "src/test/java/com/skylink/BookingManagerTest.java:class:BookingManagerTest",
+      "file": "src/test/java/com/skylink/BookingManagerTest.java",
+      "type": "class",
+      "name": "BookingManagerTest",
+      "signature": "public class BookingManagerTest {",
+      "line_start": 10,
+      "line_end": 179,
+      "docstring": "",
+      "body_preview": "public class BookingManagerTest {\n    private BookingManager manager;\n    private Flight flight;\n\n    @BeforeEach\n    void setUp() {\n        manager = new BookingManager();\n        flight = new Flight(\"SKY123\", \"NYC\", \"LAX\", new Date(), 252);\n        manager.addFlight(flight);\n    }\n\n    @Test\n    void testAddFlight() {\n        Flight found = manager.searchFlight(\"SKY123\");\n        assertNotNull(found);\n        assertEquals(\"SKY123\", found.getFlightNumber());\n    }\n\n    @Test\n    void testSearchFlights() {",
+      "imports": [
+        "org.junit.jupiter.api.Test",
+        "org.junit.jupiter.api.BeforeEach",
+        "org.junit.jupiter.api.Assertions.*",
+        "java.util.Date",
+        "java.util.List"
+      ],
+      "children": [
+        "setUp",
+        "testAddFlight",
+        "testSearchFlights",
+        "testSearchFlightsPartialMatch",
+        "testRequestBooking",
+        "testDoubleBooking",
+        "testBookingInvalidFlight",
+        "testBookingInvalidSeat",
+        "testCancelBooking",
+        "testGetBookingsByPassenger",
+        "testGetAllFlights",
+        "testAddMultipleFlights",
+        "testSearchFlightsWithMultipleResults",
+        "testSearchFlightsWithNoResults",
+        "testRequestBookingWithMultipleSeats",
+        "testCancelMultipleBookings"
+      ],
+      "parents": [],
+      "package": "com.skylink"
+    },
+    {
+      "id": "src/test/java/com/skylink/BookingManagerTest.java:method:setUp",
+      "file": "src/test/java/com/skylink/BookingManagerTest.java",
+      "type": "method",
+      "name": "setUp",
+      "signature": "void setUp() {",
+      "parent": "BookingManagerTest",
+      "line_start": 15,
+      "line_end": 19,
+      "docstring": "",
+      "body_preview": "    void setUp() {\n        manager = new BookingManager();\n        flight = new Flight(\"SKY123\", \"NYC\", \"LAX\", new Date(), 252);\n        manager.addFlight(flight);\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/BookingManagerTest.java:method:testAddFlight",
+      "file": "src/test/java/com/skylink/BookingManagerTest.java",
+      "type": "method",
+      "name": "testAddFlight",
+      "signature": "void testAddFlight() {",
+      "parent": "BookingManagerTest",
+      "line_start": 22,
+      "line_end": 26,
+      "docstring": "",
+      "body_preview": "    void testAddFlight() {\n        Flight found = manager.searchFlight(\"SKY123\");\n        assertNotNull(found);\n        assertEquals(\"SKY123\", found.getFlightNumber());\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/BookingManagerTest.java:method:testSearchFlights",
+      "file": "src/test/java/com/skylink/BookingManagerTest.java",
+      "type": "method",
+      "name": "testSearchFlights",
+      "signature": "void testSearchFlights() {",
+      "parent": "BookingManagerTest",
+      "line_start": 29,
+      "line_end": 36,
+      "docstring": "",
+      "body_preview": "    void testSearchFlights() {\n        Flight flight2 = new Flight(\"SKY456\", \"NYC\", \"SFO\", new Date(), 252);\n        manager.addFlight(flight2);\n\n        List<Flight> results = manager.searchFlights(\"NYC\", \"LAX\");\n        assertEquals(1, results.size());\n        assertEquals(\"SKY123\", results.get(0).getFlightNumber());\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/BookingManagerTest.java:method:testSearchFlightsPartialMatch",
+      "file": "src/test/java/com/skylink/BookingManagerTest.java",
+      "type": "method",
+      "name": "testSearchFlightsPartialMatch",
+      "signature": "void testSearchFlightsPartialMatch() {",
+      "parent": "BookingManagerTest",
+      "line_start": 39,
+      "line_end": 45,
+      "docstring": "",
+      "body_preview": "    void testSearchFlightsPartialMatch() {\n        Flight flight2 = new Flight(\"SKY456\", \"NYC\", \"SFO\", new Date(), 252);\n        manager.addFlight(flight2);\n\n        List<Flight> results = manager.searchFlights(\"NYC\", null);\n        assertEquals(2, results.size());\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/BookingManagerTest.java:method:testRequestBooking",
+      "file": "src/test/java/com/skylink/BookingManagerTest.java",
+      "type": "method",
+      "name": "testRequestBooking",
+      "signature": "void testRequestBooking() {",
+      "parent": "BookingManagerTest",
+      "line_start": 48,
+      "line_end": 55,
+      "docstring": "",
+      "body_preview": "    void testRequestBooking() {\n        BookingManager.BookingResult result = manager.requestBooking(\"SKY123\", \"01A\", \"John Doe\");\n        assertTrue(result.success());\n        assertNotNull(result.booking());\n        assertEquals(\"SKY123\", result.booking().getFlightNumber());\n        assertEquals(\"01A\", result.booking().getSeatNumber());\n        assertEquals(\"John Doe\", result.booking().getPassengerName());\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/BookingManagerTest.java:method:testDoubleBooking",
+      "file": "src/test/java/com/skylink/BookingManagerTest.java",
+      "type": "method",
+      "name": "testDoubleBooking",
+      "signature": "void testDoubleBooking() {",
+      "parent": "BookingManagerTest",
+      "line_start": 58,
+      "line_end": 63,
+      "docstring": "",
+      "body_preview": "    void testDoubleBooking() {\n        manager.requestBooking(\"SKY123\", \"01A\", \"John Doe\");\n        BookingManager.BookingResult result = manager.requestBooking(\"SKY123\", \"01A\", \"Jane Doe\");\n        assertFalse(result.success());\n        assertEquals(\"Seat already booked\", result.message());\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/BookingManagerTest.java:method:testBookingInvalidFlight",
+      "file": "src/test/java/com/skylink/BookingManagerTest.java",
+      "type": "method",
+      "name": "testBookingInvalidFlight",
+      "signature": "void testBookingInvalidFlight() {",
+      "parent": "BookingManagerTest",
+      "line_start": 66,
+      "line_end": 70,
+      "docstring": "",
+      "body_preview": "    void testBookingInvalidFlight() {\n        BookingManager.BookingResult result = manager.requestBooking(\"INVALID\", \"01A\", \"John Doe\");\n        assertFalse(result.success());\n        assertEquals(\"Flight not found\", result.message());\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/BookingManagerTest.java:method:testBookingInvalidSeat",
+      "file": "src/test/java/com/skylink/BookingManagerTest.java",
+      "type": "method",
+      "name": "testBookingInvalidSeat",
+      "signature": "void testBookingInvalidSeat() {",
+      "parent": "BookingManagerTest",
+      "line_start": 73,
+      "line_end": 77,
+      "docstring": "",
+      "body_preview": "    void testBookingInvalidSeat() {\n        BookingManager.BookingResult result = manager.requestBooking(\"SKY123\", \"99Z\", \"John Doe\");\n        assertFalse(result.success());\n        assertEquals(\"Seat not found\", result.message());\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/BookingManagerTest.java:method:testCancelBooking",
+      "file": "src/test/java/com/skylink/BookingManagerTest.java",
+      "type": "method",
+      "name": "testCancelBooking",
+      "signature": "void testCancelBooking() {",
+      "parent": "BookingManagerTest",
+      "line_start": 80,
+      "line_end": 89,
+      "docstring": "",
+      "body_preview": "    void testCancelBooking() {\n        BookingManager.BookingResult result = manager.requestBooking(\"SKY123\", \"01A\", \"John Doe\");\n        String bookingId = result.booking().getBookingId();\n        \n        assertTrue(manager.cancelBooking(bookingId));\n        assertNull(manager.getBooking(bookingId));\n        \n        // Seat should be available again\n        assertFalse(flight.getSeat(\"01A\").isBooked());\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/BookingManagerTest.java:method:testGetBookingsByPassenger",
+      "file": "src/test/java/com/skylink/BookingManagerTest.java",
+      "type": "method",
+      "name": "testGetBookingsByPassenger",
+      "signature": "void testGetBookingsByPassenger() {",
+      "parent": "BookingManagerTest",
+      "line_start": 92,
+      "line_end": 99,
+      "docstring": "",
+      "body_preview": "    void testGetBookingsByPassenger() {\n        manager.requestBooking(\"SKY123\", \"01A\", \"John Doe\");\n        manager.requestBooking(\"SKY123\", \"01B\", \"John Doe\");\n        manager.requestBooking(\"SKY123\", \"01C\", \"Jane Doe\");\n\n        List<Booking> johnBookings = manager.getBookingsByPassenger(\"John Doe\");\n        assertEquals(2, johnBookings.size());\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/BookingManagerTest.java:method:testGetAllFlights",
+      "file": "src/test/java/com/skylink/BookingManagerTest.java",
+      "type": "method",
+      "name": "testGetAllFlights",
+      "signature": "void testGetAllFlights() {",
+      "parent": "BookingManagerTest",
+      "line_start": 102,
+      "line_end": 108,
+      "docstring": "",
+      "body_preview": "    void testGetAllFlights() {\n        Flight flight2 = new Flight(\"SKY456\", \"SFO\", \"LAX\", new Date(), 252);\n        manager.addFlight(flight2);\n\n        List<Flight> allFlights = manager.getAllFlights();\n        assertEquals(2, allFlights.size());\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/BookingManagerTest.java:method:testAddMultipleFlights",
+      "file": "src/test/java/com/skylink/BookingManagerTest.java",
+      "type": "method",
+      "name": "testAddMultipleFlights",
+      "signature": "void testAddMultipleFlights() {",
+      "parent": "BookingManagerTest",
+      "line_start": 111,
+      "line_end": 119,
+      "docstring": "",
+      "body_preview": "    void testAddMultipleFlights() {\n        Flight flight2 = new Flight(\"SKY456\", \"NYC\", \"SFO\", new Date(), 252);\n        Flight flight3 = new Flight(\"SKY789\", \"LAX\", \"SFO\", new Date(), 252);\n        manager.addFlight(flight2);\n        manager.addFlight(flight3);\n\n        List<Flight> allFlights = manager.getAllFlights();\n        assertEquals(3, allFlights.size());\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/BookingManagerTest.java:method:testSearchFlightsWithMultipleResults",
+      "file": "src/test/java/com/skylink/BookingManagerTest.java",
+      "type": "method",
+      "name": "testSearchFlightsWithMultipleResults",
+      "signature": "void testSearchFlightsWithMultipleResults() {",
+      "parent": "BookingManagerTest",
+      "line_start": 122,
+      "line_end": 130,
+      "docstring": "",
+      "body_preview": "    void testSearchFlightsWithMultipleResults() {\n        Flight flight2 = new Flight(\"SKY456\", \"NYC\", \"SFO\", new Date(), 252);\n        Flight flight3 = new Flight(\"SKY789\", \"LAX\", \"SFO\", new Date(), 252);\n        manager.addFlight(flight2);\n        manager.addFlight(flight3);\n\n        List<Flight> results = manager.searchFlights(\"NYC\", \"SFO\");\n        assertEquals(2, results.size());\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/BookingManagerTest.java:method:testSearchFlightsWithNoResults",
+      "file": "src/test/java/com/skylink/BookingManagerTest.java",
+      "type": "method",
+      "name": "testSearchFlightsWithNoResults",
+      "signature": "void testSearchFlightsWithNoResults() {",
+      "parent": "BookingManagerTest",
+      "line_start": 133,
+      "line_end": 139,
+      "docstring": "",
+      "body_preview": "    void testSearchFlightsWithNoResults() {\n        Flight flight2 = new Flight(\"SKY456\", \"NYC\", \"SFO\", new Date(), 252);\n        manager.addFlight(flight2);\n\n        List<Flight> results = manager.searchFlights(\"LAX\", \"SFO\");\n        assertEquals(0, results.size());\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/BookingManagerTest.java:method:testRequestBookingWithMultipleSeats",
+      "file": "src/test/java/com/skylink/BookingManagerTest.java",
+      "type": "method",
+      "name": "testRequestBookingWithMultipleSeats",
+      "signature": "void testRequestBookingWithMultipleSeats() {",
+      "parent": "BookingManagerTest",
+      "line_start": 142,
+      "line_end": 156,
+      "docstring": "",
+      "body_preview": "    void testRequestBookingWithMultipleSeats() {\n        BookingManager.BookingResult result = manager.requestBooking(\"SKY123\", \"01A\", \"John Doe\");\n        assertTrue(result.success());\n        assertNotNull(result.booking());\n        assertEquals(\"SKY123\", result.booking().getFlightNumber());\n        assertEquals(\"01A\", result.booking().getSeatNumber());\n        assertEquals(\"John Doe\", result.booking().getPassengerName());\n\n        result = manager.requestBooking(\"SKY123\", \"01B\", \"Jane Doe\");\n        assertTrue(result.success());\n        assertNotNull(result.booking());\n        assertEquals(\"SKY123\", result.booking().getFlightNumber());\n        assertEquals(\"01B\", result.booking().getSeatNumber());\n        assertEquals(\"Jane Doe\", result.booking().getPassengerName());\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/BookingManagerTest.java:method:testCancelMultipleBookings",
+      "file": "src/test/java/com/skylink/BookingManagerTest.java",
+      "type": "method",
+      "name": "testCancelMultipleBookings",
+      "signature": "void testCancelMultipleBookings() {",
+      "parent": "BookingManagerTest",
+      "line_start": 159,
+      "line_end": 175,
+      "docstring": "",
+      "body_preview": "    void testCancelMultipleBookings() {\n        BookingManager.BookingResult result1 = manager.requestBooking(\"SKY123\", \"01A\", \"John Doe\");\n        BookingManager.BookingResult result2 = manager.requestBooking(\"SKY123\", \"01B\", \"Jane Doe\");\n\n        String bookingId1 = result1.booking().getBookingId();\n        String bookingId2 = result2.booking().getBookingId();\n\n        assertTrue(manager.cancelBooking(bookingId1));\n        assertTrue(manager.cancelBooking(bookingId2));\n\n        assertNull(manager.getBooking(bookingId1));\n        assertNull(manager.getBooking(bookingId2));\n\n        // Seats should be available again\n        assertFalse(flight.getSeat(\"01A\").isBooked());\n        assertFalse(flight.getSeat(\"01B\").isBooked());\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/BookingTest.java:class:BookingTest",
+      "file": "src/test/java/com/skylink/BookingTest.java",
+      "type": "class",
+      "name": "BookingTest",
+      "signature": "public class BookingTest {",
+      "line_start": 8,
+      "line_end": 68,
+      "docstring": "",
+      "body_preview": "public class BookingTest {\n    @Test\n    void testBookingCreation() {\n        Booking booking = new Booking(\"SKY123\", \"001\", \"John Doe\");\n        \n        assertNotNull(booking.getBookingId());\n        assertEquals(8, booking.getBookingId().length());\n        assertEquals(\"SKY123\", booking.getFlightNumber());\n        assertEquals(\"001\", booking.getSeatNumber());\n        assertEquals(\"John Doe\", booking.getPassengerName());\n        assertFalse(booking.isCancelled());\n        assertNotNull(booking.getBookingDate());\n    }\n\n    @Test\n    void testBookingWithAllFields() {\n        Date date = new Date();\n        Booking booking = new Booking(\"BOOK123\", \"SKY456\", \"002\", \"Jane Doe\", date, false);\n        \n        assertEquals(\"BOOK123\", booking.getBookingId());",
+      "imports": [
+        "org.junit.jupiter.api.Test",
+        "org.junit.jupiter.api.Assertions.*",
+        "java.util.Date"
+      ],
+      "children": [
+        "testBookingCreation",
+        "testBookingWithAllFields",
+        "testBookingCancellation",
+        "testBookingWithFutureDate",
+        "testBookingWithInvalidSeatNumber"
+      ],
+      "parents": [],
+      "package": "com.skylink"
+    },
+    {
+      "id": "src/test/java/com/skylink/BookingTest.java:method:testBookingCreation",
+      "file": "src/test/java/com/skylink/BookingTest.java",
+      "type": "method",
+      "name": "testBookingCreation",
+      "signature": "void testBookingCreation() {",
+      "parent": "BookingTest",
+      "line_start": 10,
+      "line_end": 20,
+      "docstring": "",
+      "body_preview": "    void testBookingCreation() {\n        Booking booking = new Booking(\"SKY123\", \"001\", \"John Doe\");\n        \n        assertNotNull(booking.getBookingId());\n        assertEquals(8, booking.getBookingId().length());\n        assertEquals(\"SKY123\", booking.getFlightNumber());\n        assertEquals(\"001\", booking.getSeatNumber());\n        assertEquals(\"John Doe\", booking.getPassengerName());\n        assertFalse(booking.isCancelled());\n        assertNotNull(booking.getBookingDate());\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/BookingTest.java:method:testBookingWithAllFields",
+      "file": "src/test/java/com/skylink/BookingTest.java",
+      "type": "method",
+      "name": "testBookingWithAllFields",
+      "signature": "void testBookingWithAllFields() {",
+      "parent": "BookingTest",
+      "line_start": 23,
+      "line_end": 33,
+      "docstring": "",
+      "body_preview": "    void testBookingWithAllFields() {\n        Date date = new Date();\n        Booking booking = new Booking(\"BOOK123\", \"SKY456\", \"002\", \"Jane Doe\", date, false);\n        \n        assertEquals(\"BOOK123\", booking.getBookingId());\n        assertEquals(\"SKY456\", booking.getFlightNumber());\n        assertEquals(\"002\", booking.getSeatNumber());\n        assertEquals(\"Jane Doe\", booking.getPassengerName());\n        assertEquals(date, booking.getBookingDate());\n        assertFalse(booking.isCancelled());\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/BookingTest.java:method:testBookingCancellation",
+      "file": "src/test/java/com/skylink/BookingTest.java",
+      "type": "method",
+      "name": "testBookingCancellation",
+      "signature": "void testBookingCancellation() {",
+      "parent": "BookingTest",
+      "line_start": 36,
+      "line_end": 44,
+      "docstring": "",
+      "body_preview": "    void testBookingCancellation() {\n        Booking booking = new Booking(\"CANCEL123\", \"001\", \"Alice Smith\", true);\n        \n        assertEquals(\"CANCEL123\", booking.getBookingId());\n        assertEquals(\"001\", booking.getSeatNumber());\n        assertEquals(\"Alice Smith\", booking.getPassengerName());\n        assertTrue(booking.isCancelled());\n        assertNotNull(booking.getBookingDate());\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/BookingTest.java:method:testBookingWithFutureDate",
+      "file": "src/test/java/com/skylink/BookingTest.java",
+      "type": "method",
+      "name": "testBookingWithFutureDate",
+      "signature": "void testBookingWithFutureDate() {",
+      "parent": "BookingTest",
+      "line_start": 47,
+      "line_end": 57,
+      "docstring": "",
+      "body_preview": "    void testBookingWithFutureDate() {\n        Date futureDate = new Date(System.currentTimeMillis() + 10000);\n        Booking booking = new Booking(\"FUTURE123\", \"SKY789\", \"003\", \"Bob Johnson\", futureDate, false);\n        \n        assertEquals(\"FUTURE123\", booking.getBookingId());\n        assertEquals(\"SKY789\", booking.getFlightNumber());\n        assertEquals(\"003\", booking.getSeatNumber());\n        assertEquals(\"Bob Johnson\", booking.getPassengerName());\n        assertEquals(futureDate, booking.getBookingDate());\n        assertFalse(booking.isCancelled());\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/BookingTest.java:method:testBookingWithInvalidSeatNumber",
+      "file": "src/test/java/com/skylink/BookingTest.java",
+      "type": "method",
+      "name": "testBookingWithInvalidSeatNumber",
+      "signature": "void testBookingWithInvalidSeatNumber() {",
+      "parent": "BookingTest",
+      "line_start": 60,
+      "line_end": 67,
+      "docstring": "",
+      "body_preview": "    void testBookingWithInvalidSeatNumber() {\n        try {\n            new Booking(\"INVALID123\", \"SKY123\", \"ZZZ\", \"Invalid Passenger\");\n            fail(\"Expected IllegalArgumentException for invalid seat number\");\n        } catch (IllegalArgumentException e) {\n            assertEquals(\"Invalid seat number: ZZZ\", e.getMessage());\n        }\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/FlightTest.java:class:FlightTest",
+      "file": "src/test/java/com/skylink/FlightTest.java",
+      "type": "class",
+      "name": "FlightTest",
+      "signature": "public class FlightTest {",
+      "line_start": 9,
+      "line_end": 72,
+      "docstring": "",
+      "body_preview": "public class FlightTest {\n    private Flight flight;\n\n    @BeforeEach\n    void setUp() {\n        flight = new Flight(\"SKY123\", \"NYC\", \"LAX\", new Date(), 252);\n    }\n\n    @Test\n    void testFlightInitialization() {\n        assertEquals(\"SKY123\", flight.getFlightNumber());\n        assertEquals(\"NYC\", flight.getOrigin());\n        assertEquals(\"LAX\", flight.getDestination());\n        assertEquals(252, flight.getTotalSeatCount());\n        assertEquals(252, flight.getAvailableSeatCount());\n    }\n\n    @Test\n    void testGetSeat() {\n        Seat seat = flight.getSeat(\"01A\");",
+      "imports": [
+        "org.junit.jupiter.api.Test",
+        "org.junit.jupiter.api.BeforeEach",
+        "org.junit.jupiter.api.Assertions.*",
+        "java.util.Date"
+      ],
+      "children": [
+        "setUp",
+        "testFlightInitialization",
+        "testGetSeat",
+        "testGetNonExistentSeat",
+        "testAvailableSeats",
+        "testBookSeat",
+        "testBookNonExistentSeat",
+        "testBookFullFlight"
+      ],
+      "parents": [],
+      "package": "com.skylink"
+    },
+    {
+      "id": "src/test/java/com/skylink/FlightTest.java:method:setUp",
+      "file": "src/test/java/com/skylink/FlightTest.java",
+      "type": "method",
+      "name": "setUp",
+      "signature": "void setUp() {",
+      "parent": "FlightTest",
+      "line_start": 13,
+      "line_end": 15,
+      "docstring": "",
+      "body_preview": "    void setUp() {\n        flight = new Flight(\"SKY123\", \"NYC\", \"LAX\", new Date(), 252);\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/FlightTest.java:method:testFlightInitialization",
+      "file": "src/test/java/com/skylink/FlightTest.java",
+      "type": "method",
+      "name": "testFlightInitialization",
+      "signature": "void testFlightInitialization() {",
+      "parent": "FlightTest",
+      "line_start": 18,
+      "line_end": 24,
+      "docstring": "",
+      "body_preview": "    void testFlightInitialization() {\n        assertEquals(\"SKY123\", flight.getFlightNumber());\n        assertEquals(\"NYC\", flight.getOrigin());\n        assertEquals(\"LAX\", flight.getDestination());\n        assertEquals(252, flight.getTotalSeatCount());\n        assertEquals(252, flight.getAvailableSeatCount());\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/FlightTest.java:method:testGetSeat",
+      "file": "src/test/java/com/skylink/FlightTest.java",
+      "type": "method",
+      "name": "testGetSeat",
+      "signature": "void testGetSeat() {",
+      "parent": "FlightTest",
+      "line_start": 27,
+      "line_end": 31,
+      "docstring": "",
+      "body_preview": "    void testGetSeat() {\n        Seat seat = flight.getSeat(\"01A\");\n        assertNotNull(seat);\n        assertEquals(\"01A\", seat.getSeatNumber());\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/FlightTest.java:method:testGetNonExistentSeat",
+      "file": "src/test/java/com/skylink/FlightTest.java",
+      "type": "method",
+      "name": "testGetNonExistentSeat",
+      "signature": "void testGetNonExistentSeat() {",
+      "parent": "FlightTest",
+      "line_start": 34,
+      "line_end": 37,
+      "docstring": "",
+      "body_preview": "    void testGetNonExistentSeat() {\n        Seat seat = flight.getSeat(\"99Z\");\n        assertNull(seat);\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/FlightTest.java:method:testAvailableSeats",
+      "file": "src/test/java/com/skylink/FlightTest.java",
+      "type": "method",
+      "name": "testAvailableSeats",
+      "signature": "void testAvailableSeats() {",
+      "parent": "FlightTest",
+      "line_start": 40,
+      "line_end": 45,
+      "docstring": "",
+      "body_preview": "    void testAvailableSeats() {\n        assertEquals(252, flight.getAvailableSeats().size());\n        Seat seat = flight.getSeat(\"01A\");\n        seat.book(\"Test Passenger\");\n        assertEquals(251, flight.getAvailableSeatCount());\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/FlightTest.java:method:testBookSeat",
+      "file": "src/test/java/com/skylink/FlightTest.java",
+      "type": "method",
+      "name": "testBookSeat",
+      "signature": "void testBookSeat() {",
+      "parent": "FlightTest",
+      "line_start": 48,
+      "line_end": 54,
+      "docstring": "",
+      "body_preview": "    void testBookSeat() {\n        Seat seat = flight.getSeat(\"01A\");\n        assertNotNull(seat);\n        assertEquals(\"01A\", seat.getSeatNumber());\n        seat.book(\"Test Passenger\");\n        assertNull(flight.getSeat(\"01A\"));\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/FlightTest.java:method:testBookNonExistentSeat",
+      "file": "src/test/java/com/skylink/FlightTest.java",
+      "type": "method",
+      "name": "testBookNonExistentSeat",
+      "signature": "void testBookNonExistentSeat() {",
+      "parent": "FlightTest",
+      "line_start": 57,
+      "line_end": 62,
+      "docstring": "",
+      "body_preview": "    void testBookNonExistentSeat() {\n        Seat seat = flight.getSeat(\"99Z\");\n        assertNull(seat);\n        boolean result = flight.bookSeat(\"99Z\", \"Test Passenger\");\n        assertFalse(result);\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/FlightTest.java:method:testBookFullFlight",
+      "file": "src/test/java/com/skylink/FlightTest.java",
+      "type": "method",
+      "name": "testBookFullFlight",
+      "signature": "void testBookFullFlight() {",
+      "parent": "FlightTest",
+      "line_start": 65,
+      "line_end": 71,
+      "docstring": "",
+      "body_preview": "    void testBookFullFlight() {\n        for (int i = 0; i < 252; i++) {\n            flight.getSeat(\"01\" + (i + 1)).book(\"Passenger\" + i);\n        }\n        boolean result = flight.bookSeat(\"01A\", \"Test Passenger\");\n        assertFalse(result);\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/SeatManagerTest.java:class:SeatManagerTest",
+      "file": "src/test/java/com/skylink/SeatManagerTest.java",
+      "type": "class",
+      "name": "SeatManagerTest",
+      "signature": "public class SeatManagerTest {",
+      "line_start": 8,
+      "line_end": 47,
+      "docstring": "",
+      "body_preview": "public class SeatManagerTest {\n\n    private SeatManager seatManager;\n\n    @BeforeEach\n    void setUp() {\n        seatManager = new SeatManager();\n    }\n\n    @Test\n    void testAllocateSeat() {\n        int seatId = seatManager.allocateSeat();\n        assertNotNull(seatId);\n        assertEquals(1, seatId);\n    }\n\n    @Test\n    void testAllocateSeatMultipleTimes() {\n        int seatId1 = seatManager.allocateSeat();\n        int seatId2 = seatManager.allocateSeat();",
+      "imports": [
+        "org.junit.jupiter.api.BeforeEach",
+        "org.junit.jupiter.api.Test",
+        "org.junit.jupiter.api.Assertions.*"
+      ],
+      "children": [
+        "setUp",
+        "testAllocateSeat",
+        "testAllocateSeatMultipleTimes",
+        "testFreeSeat",
+        "testFreeNonExistentSeat"
+      ],
+      "parents": [],
+      "package": "com.skylink"
+    },
+    {
+      "id": "src/test/java/com/skylink/SeatManagerTest.java:method:setUp",
+      "file": "src/test/java/com/skylink/SeatManagerTest.java",
+      "type": "method",
+      "name": "setUp",
+      "signature": "void setUp() {",
+      "parent": "SeatManagerTest",
+      "line_start": 13,
+      "line_end": 15,
+      "docstring": "",
+      "body_preview": "    void setUp() {\n        seatManager = new SeatManager();\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/SeatManagerTest.java:method:testAllocateSeat",
+      "file": "src/test/java/com/skylink/SeatManagerTest.java",
+      "type": "method",
+      "name": "testAllocateSeat",
+      "signature": "void testAllocateSeat() {",
+      "parent": "SeatManagerTest",
+      "line_start": 18,
+      "line_end": 22,
+      "docstring": "",
+      "body_preview": "    void testAllocateSeat() {\n        int seatId = seatManager.allocateSeat();\n        assertNotNull(seatId);\n        assertEquals(1, seatId);\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/SeatManagerTest.java:method:testAllocateSeatMultipleTimes",
+      "file": "src/test/java/com/skylink/SeatManagerTest.java",
+      "type": "method",
+      "name": "testAllocateSeatMultipleTimes",
+      "signature": "void testAllocateSeatMultipleTimes() {",
+      "parent": "SeatManagerTest",
+      "line_start": 25,
+      "line_end": 31,
+      "docstring": "",
+      "body_preview": "    void testAllocateSeatMultipleTimes() {\n        int seatId1 = seatManager.allocateSeat();\n        int seatId2 = seatManager.allocateSeat();\n        assertNotNull(seatId1);\n        assertNotNull(seatId2);\n        assertNotEquals(seatId1, seatId2);\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/SeatManagerTest.java:method:testFreeSeat",
+      "file": "src/test/java/com/skylink/SeatManagerTest.java",
+      "type": "method",
+      "name": "testFreeSeat",
+      "signature": "void testFreeSeat() {",
+      "parent": "SeatManagerTest",
+      "line_start": 34,
+      "line_end": 39,
+      "docstring": "",
+      "body_preview": "    void testFreeSeat() {\n        int seatId = seatManager.allocateSeat();\n        seatManager.freeSeat(seatId);\n        int newSeatId = seatManager.allocateSeat();\n        assertEquals(seatId, newSeatId);\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/SeatManagerTest.java:method:testFreeNonExistentSeat",
+      "file": "src/test/java/com/skylink/SeatManagerTest.java",
+      "type": "method",
+      "name": "testFreeNonExistentSeat",
+      "signature": "void testFreeNonExistentSeat() {",
+      "parent": "SeatManagerTest",
+      "line_start": 42,
+      "line_end": 46,
+      "docstring": "",
+      "body_preview": "    void testFreeNonExistentSeat() {\n        assertThrows(IllegalArgumentException.class, () -> {\n            seatManager.freeSeat(100);\n        });\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/SeatTest.java:class:SeatTest",
+      "file": "src/test/java/com/skylink/SeatTest.java",
+      "type": "class",
+      "name": "SeatTest",
+      "signature": "public class SeatTest {",
+      "line_start": 7,
+      "line_end": 76,
+      "docstring": "",
+      "body_preview": "public class SeatTest {\n    private Seat seat;\n\n    @BeforeEach\n    void setUp() {\n        seat = new Seat(\"001\");\n    }\n\n    @Test\n    void testSeatInitialization() {\n        assertFalse(seat.isBooked());\n        assertNull(seat.getPassengerName());\n        assertEquals(\"001\", seat.getSeatNumber());\n    }\n\n    @Test\n    void testBookSeat() {\n        assertTrue(seat.book(\"John Doe\"));\n        assertTrue(seat.isBooked());\n        assertEquals(\"John Doe\", seat.getPassengerName());",
+      "imports": [
+        "org.junit.jupiter.api.Test",
+        "org.junit.jupiter.api.BeforeEach",
+        "org.junit.jupiter.api.Assertions.*"
+      ],
+      "children": [
+        "setUp",
+        "testSeatInitialization",
+        "testBookSeat",
+        "testDoubleBooking",
+        "testCancelBooking",
+        "testCancelUnbookedSeat",
+        "testBookUnbookedSeat",
+        "testCancelBookedSeat",
+        "testBookAndCancelBookedSeat"
+      ],
+      "parents": [],
+      "package": "com.skylink"
+    },
+    {
+      "id": "src/test/java/com/skylink/SeatTest.java:method:setUp",
+      "file": "src/test/java/com/skylink/SeatTest.java",
+      "type": "method",
+      "name": "setUp",
+      "signature": "void setUp() {",
+      "parent": "SeatTest",
+      "line_start": 11,
+      "line_end": 13,
+      "docstring": "",
+      "body_preview": "    void setUp() {\n        seat = new Seat(\"001\");\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/SeatTest.java:method:testSeatInitialization",
+      "file": "src/test/java/com/skylink/SeatTest.java",
+      "type": "method",
+      "name": "testSeatInitialization",
+      "signature": "void testSeatInitialization() {",
+      "parent": "SeatTest",
+      "line_start": 16,
+      "line_end": 20,
+      "docstring": "",
+      "body_preview": "    void testSeatInitialization() {\n        assertFalse(seat.isBooked());\n        assertNull(seat.getPassengerName());\n        assertEquals(\"001\", seat.getSeatNumber());\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/SeatTest.java:method:testBookSeat",
+      "file": "src/test/java/com/skylink/SeatTest.java",
+      "type": "method",
+      "name": "testBookSeat",
+      "signature": "void testBookSeat() {",
+      "parent": "SeatTest",
+      "line_start": 23,
+      "line_end": 27,
+      "docstring": "",
+      "body_preview": "    void testBookSeat() {\n        assertTrue(seat.book(\"John Doe\"));\n        assertTrue(seat.isBooked());\n        assertEquals(\"John Doe\", seat.getPassengerName());\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/SeatTest.java:method:testDoubleBooking",
+      "file": "src/test/java/com/skylink/SeatTest.java",
+      "type": "method",
+      "name": "testDoubleBooking",
+      "signature": "void testDoubleBooking() {",
+      "parent": "SeatTest",
+      "line_start": 30,
+      "line_end": 34,
+      "docstring": "",
+      "body_preview": "    void testDoubleBooking() {\n        assertTrue(seat.book(\"John Doe\"));\n        assertFalse(seat.book(\"Jane Doe\"));\n        assertEquals(\"John Doe\", seat.getPassengerName());\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/SeatTest.java:method:testCancelBooking",
+      "file": "src/test/java/com/skylink/SeatTest.java",
+      "type": "method",
+      "name": "testCancelBooking",
+      "signature": "void testCancelBooking() {",
+      "parent": "SeatTest",
+      "line_start": 37,
+      "line_end": 42,
+      "docstring": "",
+      "body_preview": "    void testCancelBooking() {\n        seat.book(\"John Doe\");\n        assertTrue(seat.cancel());\n        assertFalse(seat.isBooked());\n        assertNull(seat.getPassengerName());\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/SeatTest.java:method:testCancelUnbookedSeat",
+      "file": "src/test/java/com/skylink/SeatTest.java",
+      "type": "method",
+      "name": "testCancelUnbookedSeat",
+      "signature": "void testCancelUnbookedSeat() {",
+      "parent": "SeatTest",
+      "line_start": 45,
+      "line_end": 47,
+      "docstring": "",
+      "body_preview": "    void testCancelUnbookedSeat() {\n        assertFalse(seat.cancel());\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/SeatTest.java:method:testBookUnbookedSeat",
+      "file": "src/test/java/com/skylink/SeatTest.java",
+      "type": "method",
+      "name": "testBookUnbookedSeat",
+      "signature": "void testBookUnbookedSeat() {",
+      "parent": "SeatTest",
+      "line_start": 50,
+      "line_end": 56,
+      "docstring": "",
+      "body_preview": "    void testBookUnbookedSeat() {\n        assertFalse(seat.isBooked());\n        assertNull(seat.getPassengerName());\n        assertTrue(seat.book(\"Alice\"));\n        assertTrue(seat.isBooked());\n        assertEquals(\"Alice\", seat.getPassengerName());\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/SeatTest.java:method:testCancelBookedSeat",
+      "file": "src/test/java/com/skylink/SeatTest.java",
+      "type": "method",
+      "name": "testCancelBookedSeat",
+      "signature": "void testCancelBookedSeat() {",
+      "parent": "SeatTest",
+      "line_start": 59,
+      "line_end": 64,
+      "docstring": "",
+      "body_preview": "    void testCancelBookedSeat() {\n        seat.book(\"Bob\");\n        assertTrue(seat.cancel());\n        assertFalse(seat.isBooked());\n        assertNull(seat.getPassengerName());\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/SeatTest.java:method:testBookAndCancelBookedSeat",
+      "file": "src/test/java/com/skylink/SeatTest.java",
+      "type": "method",
+      "name": "testBookAndCancelBookedSeat",
+      "signature": "void testBookAndCancelBookedSeat() {",
+      "parent": "SeatTest",
+      "line_start": 67,
+      "line_end": 75,
+      "docstring": "",
+      "body_preview": "    void testBookAndCancelBookedSeat() {\n        seat.book(\"Charlie\");\n        assertTrue(seat.cancel());\n        assertFalse(seat.isBooked());\n        assertNull(seat.getPassengerName());\n        assertTrue(seat.book(\"David\"));\n        assertTrue(seat.isBooked());\n        assertEquals(\"David\", seat.getPassengerName());\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/SkyLinkServerTest.java:class:SkyLinkServerTest",
+      "file": "src/test/java/com/skylink/SkyLinkServerTest.java",
+      "type": "class",
+      "name": "SkyLinkServerTest",
+      "signature": "public class SkyLinkServerTest {",
+      "line_start": 6,
+      "line_end": 53,
+      "docstring": "",
+      "body_preview": "public class SkyLinkServerTest {\n\n    @Test\n    public void testSkyLinkServerInitialization() {\n        SkyLinkServer server = new SkyLinkServer();\n        assertNotNull(server, \"SkyLinkServer should not be null\");\n    }\n\n    @Test\n    public void testSkyLinkServerStartStop() {\n        SkyLinkServer server = new SkyLinkServer();\n        server.start();\n        assertTrue(server.isRunning(), \"Server should be running after start\");\n        server.stop();\n        assertFalse(server.isRunning(), \"Server should be stopped\");\n    }\n\n    @Test\n    public void testHandleRequest() {\n        SkyLinkServer server = new SkyLinkServer();",
+      "imports": [
+        "org.junit.jupiter.api.Test",
+        "org.junit.jupiter.api.Assertions.*"
+      ],
+      "children": [
+        "testSkyLinkServerInitialization",
+        "testSkyLinkServerStartStop",
+        "testHandleRequest",
+        "testConcurrentRequests"
+      ],
+      "parents": [],
+      "package": "com.skylink"
+    },
+    {
+      "id": "src/test/java/com/skylink/SkyLinkServerTest.java:method:testSkyLinkServerInitialization",
+      "file": "src/test/java/com/skylink/SkyLinkServerTest.java",
+      "type": "method",
+      "name": "testSkyLinkServerInitialization",
+      "signature": "public void testSkyLinkServerInitialization() {",
+      "parent": "SkyLinkServerTest",
+      "line_start": 9,
+      "line_end": 12,
+      "docstring": "",
+      "body_preview": "    public void testSkyLinkServerInitialization() {\n        SkyLinkServer server = new SkyLinkServer();\n        assertNotNull(server, \"SkyLinkServer should not be null\");\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/SkyLinkServerTest.java:method:testSkyLinkServerStartStop",
+      "file": "src/test/java/com/skylink/SkyLinkServerTest.java",
+      "type": "method",
+      "name": "testSkyLinkServerStartStop",
+      "signature": "public void testSkyLinkServerStartStop() {",
+      "parent": "SkyLinkServerTest",
+      "line_start": 15,
+      "line_end": 21,
+      "docstring": "",
+      "body_preview": "    public void testSkyLinkServerStartStop() {\n        SkyLinkServer server = new SkyLinkServer();\n        server.start();\n        assertTrue(server.isRunning(), \"Server should be running after start\");\n        server.stop();\n        assertFalse(server.isRunning(), \"Server should be stopped\");\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/SkyLinkServerTest.java:method:testHandleRequest",
+      "file": "src/test/java/com/skylink/SkyLinkServerTest.java",
+      "type": "method",
+      "name": "testHandleRequest",
+      "signature": "public void testHandleRequest() {",
+      "parent": "SkyLinkServerTest",
+      "line_start": 24,
+      "line_end": 30,
+      "docstring": "",
+      "body_preview": "    public void testHandleRequest() {\n        SkyLinkServer server = new SkyLinkServer();\n        server.start();\n        String response = server.handleRequest(\"Test Request\");\n        assertEquals(\"Expected Response\", response, \"Response should match the expected value\");\n        server.stop();\n    }"
+    },
+    {
+      "id": "src/test/java/com/skylink/SkyLinkServerTest.java:method:testConcurrentRequests",
+      "file": "src/test/java/com/skylink/SkyLinkServerTest.java",
+      "type": "method",
+      "name": "testConcurrentRequests",
+      "signature": "public void testConcurrentRequests() throws InterruptedException {",
+      "parent": "SkyLinkServerTest",
+      "line_start": 33,
+      "line_end": 52,
+      "docstring": "",
+      "body_preview": "    public void testConcurrentRequests() throws InterruptedException {\n        SkyLinkServer server = new SkyLinkServer();\n        server.start();\n        \n        Runnable task = () -> {\n            String response = server.handleRequest(\"Concurrent Request\");\n            assertEquals(\"Expected Response\", response, \"Response should match the expected value\");\n        };\n        \n        Thread thread1 = new Thread(task);\n        Thread thread2 = new Thread(task);\n        \n        thread1.start();\n        thread2.start();\n        \n        thread1.join();\n        thread2.join();\n        \n        server.stop();\n    }"
+    }
+  ],
+  "edges": [],
+  "file_imports": {
+    "src/main/java/com/skylink/Booking.java": [
+      "java.util.Date",
+      "java.util.UUID"
+    ],
+    "src/main/java/com/skylink/BookingManager.java": [
+      "java.util.*",
+      "java.util.concurrent.*",
+      "java.util.stream.Collectors"
+    ],
+    "src/main/java/com/skylink/Flight.java": [
+      "java.util.*",
+      "java.util.concurrent.*"
+    ],
+    "src/main/java/com/skylink/FlightDTO.java": [
+      "java.util.Date",
+      "java.util.HashMap",
+      "java.util.Map"
+    ],
+    "src/main/java/com/skylink/Seat.java": [
+      "java.util.concurrent.atomic.AtomicBoolean",
+      "java.util.concurrent.atomic.AtomicReference"
+    ],
+    "src/main/java/com/skylink/SeatDTO.java": [],
+    "src/main/java/com/skylink/SkyLinkApp.java": [
+      "java.util.*",
+      "java.util.concurrent.*"
+    ],
+    "src/main/java/com/skylink/SkyLinkServer.java": [
+      "spark.Spark.*",
+      "com.google.gson.Gson",
+      "com.google.gson.GsonBuilder",
+      "java.util.*"
+    ],
+    "src/test/java/com/skylink/BookingManagerTest.java": [
+      "org.junit.jupiter.api.Test",
+      "org.junit.jupiter.api.BeforeEach",
+      "org.junit.jupiter.api.Assertions.*",
+      "java.util.Date",
+      "java.util.List"
+    ],
+    "src/test/java/com/skylink/BookingTest.java": [
+      "org.junit.jupiter.api.Test",
+      "org.junit.jupiter.api.Assertions.*",
+      "java.util.Date"
+    ],
+    "src/test/java/com/skylink/FlightTest.java": [
+      "org.junit.jupiter.api.Test",
+      "org.junit.jupiter.api.BeforeEach",
+      "org.junit.jupiter.api.Assertions.*",
+      "java.util.Date"
+    ],
+    "src/test/java/com/skylink/SeatManagerTest.java": [
+      "org.junit.jupiter.api.BeforeEach",
+      "org.junit.jupiter.api.Test",
+      "org.junit.jupiter.api.Assertions.*"
+    ],
+    "src/test/java/com/skylink/SeatTest.java": [
+      "org.junit.jupiter.api.Test",
+      "org.junit.jupiter.api.BeforeEach",
+      "org.junit.jupiter.api.Assertions.*"
+    ],
+    "src/test/java/com/skylink/SkyLinkServerTest.java": [
+      "org.junit.jupiter.api.Test",
+      "org.junit.jupiter.api.Assertions.*"
+    ]
+  },
+  "total_files": 14
+}
